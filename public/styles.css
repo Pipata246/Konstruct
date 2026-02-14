@@ -337,6 +337,28 @@ html {
   padding-bottom: calc(48px + env(safe-area-inset-bottom, 0) + 56px);
 }
 
+.tg-miniapp .pill-row {
+  gap: 14px;
+  margin: 24px 0 32px;
+}
+
+.tg-miniapp .pill {
+  padding: 12px 18px;
+  font-size: 14px;
+}
+
+.tg-miniapp .btn-row {
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.tg-miniapp .btn-row .primary-btn,
+.tg-miniapp .btn-row .secondary-btn {
+  min-height: 52px;
+  padding: 16px 28px;
+  font-size: 16px;
+}
+
 .footer {
   border-top: 1px solid rgba(207, 216, 231, 0.9);
   padding: 16px 0 22px;
@@ -431,16 +453,16 @@ html {
 .pill-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0 4px;
+  gap: 12px;
+  margin: 20px 0 24px;
 }
 
 .pill {
-  padding: 4px 10px;
+  padding: 10px 16px;
   border-radius: 999px;
   background: #eef3ff;
   border: 1px solid rgba(207, 216, 231, 0.9);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -454,8 +476,8 @@ html {
   border-radius: 999px;
   border: none;
   cursor: pointer;
-  padding: 10px 16px;
-  font-size: 13px;
+  padding: 14px 24px;
+  font-size: 15px;
   font-weight: 500;
   transition: 0.18s ease-out;
 }
@@ -488,9 +510,17 @@ html {
 
 .btn-row {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 14px;
+  margin-top: 24px;
+  align-items: stretch;
+}
+
+.btn-row .primary-btn,
+.btn-row .secondary-btn {
+  width: 100%;
+  min-height: 48px;
 }
 
 .muted-text {
