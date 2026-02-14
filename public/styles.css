@@ -1141,6 +1141,7 @@ html {
   }
 
   .header-inner {
+    position: relative;
     gap: 8px;
   }
 
@@ -1150,9 +1151,11 @@ html {
 
   .nav {
     position: absolute;
-    top: 52px;
-    right: 20px;
-    left: 20px;
+    top: 100%;
+    margin-top: 8px;
+    right: 0;
+    left: auto;
+    min-width: 180px;
     display: none;
     flex-direction: column;
     gap: 4px;
