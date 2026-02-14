@@ -1102,12 +1102,35 @@ async function renderProfile() {
         <section id="profile" class="section hero-section">
           <div class="neo-card section-shell">
             <h2 class="section-title">${t.title}</h2>
-            <p class="section-subtitle">${t.loginHint}</p>
-            <a href="#" class="primary-btn" onclick="document.getElementById('profile-btn')?.click(); return false;">${state.lang === 'ru' ? 'Войти' : 'Log in'}</a>
+            <div class="profile-tabs profile-tabs-split">
+              <button class="profile-tab-btn ${state.profileTab === 'drafts' ? 'active' : ''}" data-tab="drafts">${t.tabDrafts}</button>
+              <button class="profile-tab-btn ${state.profileTab === 'orders' ? 'active' : ''}" data-tab="orders">${t.tabOrders}</button>
+            </div>
+            <div id="profile-tab-content">
+              <div id="profile-drafts-list" class="profile-tab-pane" style="${state.profileTab === 'drafts' ? '' : 'display:none'}">
+                <p class="section-subtitle">${t.loginHint}</p>
+                <a href="#" class="primary-btn" onclick="document.getElementById('profile-btn')?.click(); return false;">${state.lang === 'ru' ? 'Войти' : 'Log in'}</a>
+              </div>
+              <div id="profile-orders-list" class="profile-tab-pane" style="${state.profileTab === 'orders' ? '' : 'display:none'}">
+                <p class="section-subtitle">${t.loginHint}</p>
+                <a href="#" class="primary-btn" onclick="document.getElementById('profile-btn')?.click(); return false;">${state.lang === 'ru' ? 'Войти' : 'Log in'}</a>
+              </div>
+            </div>
           </div>
         </section>
       </div>
     `;
+    document.querySelectorAll('.profile-tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+        if (tab === state.profileTab) return;
+        state.profileTab = tab;
+        document.querySelectorAll('.profile-tab-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('profile-drafts-list').style.display = tab === 'drafts' ? '' : 'none';
+        document.getElementById('profile-orders-list').style.display = tab === 'orders' ? '' : 'none';
+      });
+    });
     return;
   }
 
@@ -1131,15 +1154,15 @@ async function renderProfile() {
               ${username ? `<div class="profile-username small muted-text">${username}</div>` : ''}
             </div>
           </div>
-          <div class="profile-tabs" style="display:flex;gap:8px;margin-bottom:20px">
+          <div class="profile-tabs profile-tabs-split">
             <button class="profile-tab-btn ${state.profileTab === 'drafts' ? 'active' : ''}" data-tab="drafts">${t.tabDrafts}</button>
             <button class="profile-tab-btn ${state.profileTab === 'orders' ? 'active' : ''}" data-tab="orders">${t.tabOrders}</button>
           </div>
           <div id="profile-tab-content">
-            <div id="profile-drafts-list" class="profile-drafts-list" style="${state.profileTab === 'drafts' ? '' : 'display:none'}">
+            <div id="profile-drafts-list" class="profile-tab-pane profile-drafts-list" style="${state.profileTab === 'drafts' ? '' : 'display:none'}">
               <p class="small muted-text">${state.lang === 'ru' ? 'Загрузка...' : 'Loading...'}</p>
             </div>
-            <div id="profile-orders-list" class="profile-orders-list" style="${state.profileTab === 'orders' ? '' : 'display:none'}">
+            <div id="profile-orders-list" class="profile-tab-pane profile-orders-list" style="${state.profileTab === 'orders' ? '' : 'display:none'}">
               <p class="small muted-text">${t.ordersEmpty}</p>
             </div>
           </div>
