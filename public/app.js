@@ -906,8 +906,8 @@ function getLetterPreviewFromData(f) {
   const extraText = (f.extraInfo && String(f.extraInfo).trim()) || '';
   const extraBlock = extraText ? (ru ? `\n\n5. Иная информация: ${extraText}.\n\n` : ` 5) Other: ${extraText}. `) : (ru ? '\n\n' : ' ');
   const body = ru
-    ? `Я, ${f.fullName || "___________"}, являюсь собственником/нанимателем жилого помещения по вышеуказанному адресу. На основании статьи 165 Жилищного кодекса РФ и п. 31, 34-38 Постановления Правительства РФ № 416 от 15.05.2013 "О порядке осуществления деятельности по управлению многоквартирными домами", ПРОШУ:\n\nПредоставить мне в срок, установленный законодательством (не более 10 рабочих дней / 20 календарных дней согласно п. 67 Стандартов раскрытия информации), следующую информацию по моему многоквартирному дому:\n\n1. Сведения о начислениях и задолженности:\n1.1. Имеется ли у меня задолженность по оплате жилищно-коммунальных услуг на дату составления ответа? Если да — с детализацией по видам услуг и периодам.${periodPhrase11}\n1.2. Помесячные объемы потребленных коммунальных ресурсов по показаниям общедомовых приборов учета${periodPhrase}.\n\n2. Сведения о расходовании средств:\n${servicesList}\nСведения о заключенных договорах с подрядными организациями на выполнение работ (с указанием предмета договора и стоимости), если такие работы оплачивались за счет средств собственников.\n\n3. Сведения об управляющей организации: Режим работы, контактные телефоны аварийно-диспетчерской службы.\n\n4. Сведения о тарифах и нормативах: Действующие тарифы на коммунальные услуги и размер платы за содержание жилого помещения с расшифровкой (ставки за управление, содержание, текущий ремонт).${extraBlock}Дата: «»______ 20   г.\nПодпись: _______________`
-    : `I, ${f.fullName || "___________"}, am the owner/tenant of the residential premises at the above address. Under Art. 165 of the Housing Code of the RF and paras. 31, 34-38 of RF Government Decree No. 416 of 15.05.2013, I REQUEST:\n\nTo be provided within the statutory time limit with the following information. 1) Charges and arrears${periodPhrase11} 1.2) Monthly consumption${periodPhrase}. 2) Expenditure: ${servicesList} 3) MC details and emergency contacts. 4) Tariffs.${extraBlock}\n\nDate ________  Signature ________`;
+    ? `Я, ${f.fullName || "___________"}, являюсь собственником/нанимателем жилого помещения по вышеуказанному адресу. На основании статьи 165 Жилищного кодекса РФ и п. 31, 34-38 Постановления Правительства РФ № 416 от 15.05.2013 "О порядке осуществления деятельности по управлению многоквартирными домами", ПРОШУ:\n\nПредоставить мне в срок, установленный законодательством (не более 10 рабочих дней / 20 календарных дней согласно п. 67 Стандартов раскрытия информации), следующую информацию по моему многоквартирному дому:\n\n1. Сведения о начислениях и задолженности:\n1.1. Имеется ли у меня задолженность по оплате жилищно-коммунальных услуг на дату составления ответа? Если да — с детализацией по видам услуг и периодам.${periodPhrase11}\n1.2. Помесячные объемы потребленных коммунальных ресурсов по показаниям общедомовых приборов учета${periodPhrase}.\n\n2. Сведения о расходовании средств:\n${servicesList}\nСведения о заключенных договорах с подрядными организациями на выполнение работ (с указанием предмета договора и стоимости), если такие работы оплачивались за счет средств собственников.\n\n3. Сведения об управляющей организации: Режим работы, контактные телефоны аварийно-диспетчерской службы.\n\n4. Сведения о тарифах и нормативах: Действующие тарифы на коммунальные услуги и размер платы за содержание жилого помещения с расшифровкой (ставки за управление, содержание, текущий ремонт).${extraBlock}Дата: «»______ 20   г.\nПодпись: _______________ (${fullNameToShort(f.fullName) || '__________'})`
+    : `I, ${f.fullName || "___________"}, am the owner/tenant of the residential premises at the above address. Under Art. 165 of the Housing Code of the RF and paras. 31, 34-38 of RF Government Decree No. 416 of 15.05.2013, I REQUEST:\n\nTo be provided within the statutory time limit with the following information. 1) Charges and arrears${periodPhrase11} 1.2) Monthly consumption${periodPhrase}. 2) Expenditure: ${servicesList} 3) MC details and emergency contacts. 4) Tariffs.${extraBlock}\n\nDate ________  Signature ________ (${fullNameToShort(f.fullName) || '__________'})`;
 
   return `${header}\n\n\n${title}\n\n\n${body}`.trim();
 }
@@ -921,6 +921,15 @@ function escapeHtml(s) {
   const div = document.createElement('div');
   div.textContent = s;
   return div.innerHTML;
+}
+
+function fullNameToShort(fullName) {
+  const s = (fullName || '').trim();
+  if (!s) return '';
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 3) return parts[0] + ' ' + (parts[1][0] || '') + '.' + (parts[2][0] || '') + '.';
+  if (parts.length === 2) return parts[0] + ' ' + (parts[1][0] || '') + '.';
+  return parts[0] || '';
 }
 
 function buildPdfDocumentHtml(f, ru) {
@@ -950,9 +959,9 @@ function buildPdfDocumentHtml(f, ru) {
 <p style="margin:0 0 8px; line-height:1.5;"><strong>3. Сведения об управляющей организации:</strong> Режим работы, контактные телефоны аварийно-диспетчерской службы.</p>
 <p style="margin:0 0 8px; line-height:1.5;"><strong>4. Сведения о тарифах и нормативах:</strong> Действующие тарифы на коммунальные услуги и размер платы за содержание жилого помещения с расшифровкой (ставки за управление, содержание, текущий ремонт).</p>
 ${(f.extraInfo && String(f.extraInfo).trim()) ? `<p style="margin:0 0 16px; line-height:1.5;"><strong>5. Иная информация:</strong> ${escapeHtml(String(f.extraInfo).trim())}.</p>` : ''}
-<p style="margin:28px 0 0; display:flex; justify-content:space-between; line-height:1.5;"><span>Дата: «»______ 20&nbsp;&nbsp;&nbsp;г.</span><span>Подпись: _______________</span></p>`
+<p style="margin:28px 0 0; display:flex; justify-content:space-between; line-height:1.5;"><span>Дата: «»______ 20&nbsp;&nbsp;&nbsp;г.</span><span>Подпись: _______________ (${escapeHtml(fullNameToShort(f.fullName) || '__________')})</span></p>`
     : `<p style="margin:0 0 14px; line-height:1.5;">I, ${escapeHtml(f.fullName || '___________')}, request the following information under Art. 165 Housing Code and Decree No. 416. 1) Charges and arrears${periodPhrase11}. 1.2) Consumption${periodPhrase}. 2) ${servicesList} 3) MC contacts. 4) Tariffs.${(f.extraInfo && String(f.extraInfo).trim()) ? ' 5) ' + escapeHtml(String(f.extraInfo).trim()) + '.' : ''}</p>
-<p style="margin:28px 0 0; display:flex; justify-content:space-between; line-height:1.5;"><span>Date ________</span><span>Signature ________</span></p>`;
+<p style="margin:28px 0 0; display:flex; justify-content:space-between; line-height:1.5;"><span>Date ________</span><span>Signature ________ (${escapeHtml(fullNameToShort(f.fullName) || '__________')})</span></p>`;
 
   const headerHtml = `<div style="font-size:10pt; line-height:1.5; margin-bottom:24px; text-align:left;">${headerBlock}</div>`;
   const titleText = ru
