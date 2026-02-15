@@ -345,7 +345,11 @@ async function addBlogComment(postId, text) {
 async function deleteBlogComment(commentId) {
   const headers = { 'Content-Type': 'application/json' };
   if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
-  const res = await fetch(API_BASE_BLOG + '/api/blog?commentId=' + encodeURIComponent(commentId), { method: 'DELETE', headers });
+  let url = API_BASE_BLOG + '/api/blog?commentId=' + encodeURIComponent(commentId);
+  if (isInTelegramWebApp() && window.Telegram?.WebApp?.initData) {
+    url += '&initData=' + encodeURIComponent(window.Telegram.WebApp.initData);
+  }
+  const res = await fetch(url, { method: 'DELETE', headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Ошибка');
   return data;
@@ -2473,7 +2477,7 @@ function renderBlog() {
         ? `<p class="small muted-text" style="margin:0 0 12px">${t.commentsEmpty}</p>`
         : comments.map(c => {
           const canEdit = canEditComment(c);
-          const canDelete = state.isAdmin;
+          const canDelete = state.isAdmin || canEditComment(c);
           const btns = [];
           if (canEdit) btns.push(`<button type="button" class="secondary-btn blog-edit-comment" data-comment-id="${c.id}" data-post-id="${post.id}" style="flex-shrink:0;padding:4px 10px;font-size:12px">${t.editComment}</button>`);
           if (canDelete) btns.push(`<button type="button" class="secondary-btn blog-delete-comment" data-comment-id="${c.id}" data-post-id="${post.id}" style="flex-shrink:0;padding:4px 10px;font-size:12px">${t.deleteComment}</button>`);
@@ -2567,6 +2571,7 @@ function renderBlog() {
         const headerEl = item?.querySelector('.blog-comment-header');
         if (!bodyEl || !headerEl) return;
         const currentText = bodyEl.textContent;
+        const authorName = bodyEl.previousElementSibling?.textContent || '';
         headerEl.innerHTML = `
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:8px">${escapeHtml(authorName)}</div>
@@ -2580,7 +2585,6 @@ function renderBlog() {
         const textarea = headerEl.querySelector('.comment-edit-textarea');
         const saveBtn = headerEl.querySelector('.blog-save-comment');
         const cancelBtn = headerEl.querySelector('.blog-cancel-comment');
-        const authorName = bodyEl.previousElementSibling?.textContent || '';
         saveBtn?.addEventListener('click', async () => {
           const text = textarea?.value?.trim();
           if (!text) return;

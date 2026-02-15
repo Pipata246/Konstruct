@@ -189,7 +189,10 @@ module.exports = async function handler(req, res) {
       if (!user) return res.status(401).json({ error: 'Необходима авторизация' });
       const commentId = query.commentId;
       if (commentId) {
-        if (!(await isAdmin(supabase, user.id))) return res.status(403).json({ error: 'Только админ может удалять комментарии' });
+        const { data: existing } = await supabase.from('blog_comments').select('user_id').eq('id', commentId).single();
+        const isOwner = existing && existing.user_id && String(existing.user_id) === String(user.id);
+        const isAdminUser = await isAdmin(supabase, user.id);
+        if (!isAdminUser && !isOwner) return res.status(403).json({ error: 'Можно удалять только свои комментарии или нужны права админа' });
         const { error } = await supabase.from('blog_comments').delete().eq('id', commentId);
         if (error) return res.status(500).json({ error: error.message });
         return res.status(200).json({ ok: true });
