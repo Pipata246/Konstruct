@@ -245,6 +245,26 @@ async function createOrderApi(orderData) {
   return data.order;
 }
 
+async function createPaymentApi(orderData, withExpert) {
+  const headers = { 'Content-Type': 'application/json' };
+  const payload = { orderData: { ...orderData, withExpert }, withExpert };
+  if (isInTelegramWebApp() && window.Telegram?.WebApp?.initData) {
+    payload.initData = window.Telegram.WebApp.initData;
+  } else if (state.token) {
+    headers['Authorization'] = 'Bearer ' + state.token;
+  } else {
+    throw new Error('Необходима авторизация');
+  }
+  const res = await fetch(API_BASE + '/api/create-payment', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Ошибка создания платежа');
+  return data;
+}
+
 async function updateOrderInApi(id, orderData) {
   const data = await ordersApi('PUT', { id, data: orderData });
   return data.order;
@@ -554,6 +574,12 @@ const I18N = {
       previewTitle: "Черновик письма",
       previewSubtitle:
         "Предпросмотр обновляется при каждом изменении полей. В реальном продукте на этом шаге будет PDF‑просмотрщик.",
+      payModalTitle: "Проверьте данные перед оплатой",
+      checkDataBeforePay: "Проверьте внесённые данные перед оплатой.",
+      pay: "Оплатить",
+      cancel: "Отмена",
+      paymentSuccess: "Оплата прошла. Заказ создан.",
+      paymentCancel: "Оплата отменена. Заказ не создан.",
     },
     blog: {
       title: "Блог о защите прав и ЖКХ",
@@ -847,6 +873,12 @@ const I18N = {
       previewTitle: "Letter draft",
       previewSubtitle:
         "The preview updates on every change. In production this will be a PDF viewer.",
+      payModalTitle: "Check your details before payment",
+      checkDataBeforePay: "Please check the entered data before payment.",
+      pay: "Pay",
+      cancel: "Cancel",
+      paymentSuccess: "Payment successful. Order created.",
+      paymentCancel: "Payment cancelled. No order was created.",
     },
     blog: {
       title: "Blog about housing rights",
@@ -1070,6 +1102,61 @@ async function saveDraft() {
   }
 }
 
+function showPaymentModal() {
+  const t = I18N[state.lang].form;
+  const letter = getLetterPreview();
+  const overlay = document.createElement('div');
+  overlay.id = 'payment-modal-overlay';
+  overlay.className = 'payment-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+  const box = document.createElement('div');
+  box.className = 'neo-card';
+  box.style.cssText = 'max-width:520px;width:100%;max-height:90vh;overflow:auto;';
+  box.innerHTML = `
+    <h3 class="preview-title" style="margin-top:0">${t.payModalTitle}</h3>
+    <p class="small muted-text" style="margin-bottom:12px">${t.checkDataBeforePay}</p>
+    <div class="preview-letter" style="background:#f5f5f5;padding:12px;border-radius:8px;margin-bottom:16px;max-height:240px;overflow:auto;">
+      <pre style="white-space:pre-wrap;font-family:system-ui,sans-serif;font-size:13px;margin:0">${escapeHtml(letter)}</pre>
+    </div>
+    <div class="btn-row" style="gap:8px;flex-wrap:wrap;">
+      <button type="button" class="secondary-btn" id="payment-modal-cancel">${t.cancel}</button>
+      <button type="button" class="primary-btn" id="payment-modal-pay">${t.pay}</button>
+    </div>
+  `;
+  overlay.appendChild(box);
+
+  function closeModal() {
+    overlay.remove();
+  }
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  box.querySelector('#payment-modal-cancel').addEventListener('click', closeModal);
+
+  box.querySelector('#payment-modal-pay').addEventListener('click', async () => {
+    const orderData = { ...state.constructorForm, withExpert: state.withExpert };
+    const payBtn = box.querySelector('#payment-modal-pay');
+    payBtn.disabled = true;
+    payBtn.textContent = state.lang === 'ru' ? 'Перенаправление…' : 'Redirecting…';
+    try {
+      const data = await createPaymentApi(orderData, state.withExpert);
+      if (data.confirmation_url) {
+        window.location.href = data.confirmation_url;
+        return;
+      }
+      throw new Error('Нет ссылки на оплату');
+    } catch (e) {
+      payBtn.disabled = false;
+      payBtn.textContent = t.pay;
+      alert(state.lang === 'ru' ? 'Ошибка: ' + (e.message || 'Проверьте подключение') : 'Error: ' + (e.message || 'Check connection'));
+    }
+  });
+
+  document.body.appendChild(overlay);
+}
+
 async function createOrder() {
   if (!state.user) {
     alert(I18N[state.lang].alerts.mustLogin);
@@ -1084,16 +1171,11 @@ async function createOrder() {
         o.id === state.editingOrderId ? { ...o, ...updated } : o
       );
       alert(state.lang === 'ru' ? 'Заказ обновлён и направлен на повторную проверку.' : 'Order updated and sent for re-review.');
+      window.location.hash = '#profile';
+      render();
     } else {
-      const created = await createOrderApi(orderData);
-      clearConstructorForm();
-      state.profileOrders = [{ ...created }, ...(state.profileOrders || [])];
-      alert(state.withExpert
-        ? (state.lang === 'ru' ? 'Заказ оформлен. Документ направлен на проверку эксперту. Вы сможете скачать его после одобрения.' : 'Order created. Document sent for expert review. You can download it after approval.')
-        : (state.lang === 'ru' ? 'Заказ оформлен' : 'Order created'));
+      showPaymentModal();
     }
-    window.location.hash = '#profile';
-    render();
   } catch (e) {
     alert(state.lang === 'ru' ? 'Ошибка: ' + (e.message || 'Проверьте подключение') : 'Error: ' + (e.message || 'Check connection'));
   }
@@ -1364,6 +1446,22 @@ function formatOrderPreview(order) {
   const uk = order.data.ukName || (state.lang === 'ru' ? 'УК не указана' : 'MC not specified');
   const period = order.data.period || '';
   return [uk, period].filter(Boolean).join(' · ') || (state.lang === 'ru' ? 'Заказ' : 'Order');
+}
+
+function applyPaymentReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+  if (!payment) return;
+  const t = I18N[state.lang].form;
+  const msg = payment === 'success' ? t.paymentSuccess : t.paymentCancel;
+  window.history.replaceState(null, '', window.location.pathname + '#profile');
+  window.location.hash = '#profile';
+  fetchOrders().then((orders) => {
+    state.profileOrders = orders || [];
+  }).catch(() => {}).finally(() => {
+    alert(msg);
+    render();
+  });
 }
 
 function render() {
@@ -2780,7 +2878,11 @@ function initShell() {
   state.blogPosts = [];
   initProfile();
 
-  initAuth().then(() => render());
+  initAuth().then(() => {
+    const hasPayment = new URLSearchParams(window.location.search).get('payment');
+    if (hasPayment) applyPaymentReturn();
+    else render();
+  });
 }
 
 initShell();
