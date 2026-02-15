@@ -11,10 +11,16 @@ const state = {
   constructorForm: {
     fullName: "",
     address: "",
+    passportSeries: "",
+    passportNumber: "",
+    passportIssued: "",
+    phone: "",
     ukName: "",
     ukAddress: "",
     period: "",
     emailForReply: "",
+    replyMethod: "mail",
+    extraInfo: "",
     services: {
       content: true,
       heating: false,
@@ -349,25 +355,36 @@ const I18N = {
       title: "Мини‑демо конструктора",
       subtitle:
         "Ниже — укороченная версия формы из продукта. Все данные хранятся только в памяти страницы.",
-      fullName: "ФИО",
+      fullName: "ФИО полностью",
       fullNamePlaceholder: "Иванов Иван Иванович",
-      address: "Адрес проживания",
-      addressPlaceholder: "г. Москва, ул. Пример, д. 1, кв. 1",
-      ukName: "Название УК",
-      ukNamePlaceholder: "ООО «УК Пример»",
+      address: "Адрес регистрации и фактического проживания",
+      addressPlaceholder: "Индекс, город, улица, дом, кв.",
+      passportSeries: "Паспорт: серия",
+      passportNumber: "Номер",
+      passportIssued: "Выдан",
+      passportIssuedPlaceholder: "кем и когда выдан",
+      phone: "Контактный телефон",
+      phonePlaceholder: "+7 (___) ___-__-__",
+      ukName: "Кому (название УК / ФИО директора)",
+      ukNamePlaceholder: "ООО «УК Пример» или ФИО руководителя",
       ukAddress: "Адрес УК",
       ukAddressPlaceholder: "г. Москва, ул. Управляющая, д. 10",
       period: "Период начислений",
-      periodPlaceholder: "Например: с января по март 2026 года",
-      services: "Услуги",
+      periodPlaceholder: "Например: с 01.01.2025 по 31.03.2025",
+      services: "Услуги (отметьте нужные для п. 2)",
       servicesOptions: {
         content: "Содержание и коммунальные услуги",
         heating: "Отопление",
         water: "Водоснабжение",
         repair: "Ремонт общедомового имущества",
       },
-      email: "Email для ответа (необязательно)",
-      emailPlaceholder: "Если хотите получить ответ по email",
+      email: "Email для ответа",
+      emailPlaceholder: "example@mail.ru",
+      replyMethod: "Способ получения ответа",
+      replyByMail: "Почтой по адресу",
+      replyInPerson: "Выдать на руки при обращении",
+      extraInfo: "Иная информация (необязательно)",
+      extraInfoPlaceholder: "Например: сведения о посеве газона, ремонте детской площадки",
       withExpert: "Хочу проверку эксперта (+1 500 ₽)",
       saveDraft: "Сохранить черновик",
       createOrder: "Создать заказ",
@@ -604,23 +621,34 @@ const I18N = {
         "Below is a shortened version of the real form. All data is stored only in the page memory.",
       fullName: "Full name",
       fullNamePlaceholder: "Ivan Ivanov",
-      address: "Residential address",
-      addressPlaceholder: "Moscow, Example st. 1, apt. 1",
-      ukName: "Management company name",
-      ukNamePlaceholder: "LLC \"Example MC\"",
-      ukAddress: "Management company address",
+      address: "Registration and actual residence address",
+      addressPlaceholder: "Postcode, city, street, building, apt.",
+      passportSeries: "Passport: series",
+      passportNumber: "Number",
+      passportIssued: "Issued by",
+      passportIssuedPlaceholder: "authority and date",
+      phone: "Contact phone",
+      phonePlaceholder: "+7 (___) ___-__-__",
+      ukName: "To (MC name / director name)",
+      ukNamePlaceholder: "LLC \"Example MC\" or director full name",
+      ukAddress: "MC address",
       ukAddressPlaceholder: "Moscow, Management st. 10",
       period: "Billing period",
-      periodPlaceholder: "For example: January–March 2026",
-      services: "Services",
+      periodPlaceholder: "e.g. 01.01.2025 – 31.03.2025",
+      services: "Services (for section 2)",
       servicesOptions: {
         content: "Housing and communal services",
         heating: "Heating",
         water: "Water supply",
         repair: "Common property repairs",
       },
-      email: "Email for reply (optional)",
-      emailPlaceholder: "If you want to receive a reply by email",
+      email: "Email for reply",
+      emailPlaceholder: "example@mail.com",
+      replyMethod: "How to receive the response",
+      replyByMail: "By mail to the address",
+      replyInPerson: "In person when applying",
+      extraInfo: "Other information (optional)",
+      extraInfoPlaceholder: "e.g. lawn, playground repair",
       withExpert: "I want expert review (+1 500 ₽)",
       saveDraft: "Save draft",
       createOrder: "Create order",
@@ -772,10 +800,16 @@ function clearConstructorForm() {
   state.constructorForm = {
     fullName: "",
     address: "",
+    passportSeries: "",
+    passportNumber: "",
+    passportIssued: "",
+    phone: "",
     ukName: "",
     ukAddress: "",
     period: "",
     emailForReply: "",
+    replyMethod: "mail",
+    extraInfo: "",
     services: { content: true, heating: false, water: false, repair: false },
   };
   state.withExpert = false;
@@ -840,54 +874,51 @@ function addComment(postId, text) {
   addCommentLocal(postId, text);
 }
 
-function getLetterPreviewFromData(f) {
-  if (!f) f = state.constructorForm;
-  const lang = state.lang;
-  const chosenServices = Object.entries(f.services)
+function getRequestDocParts(f, lang) {
+  const ru = lang === "ru";
+  const chosenServices = Object.entries(f.services || {})
     .filter(([, v]) => v)
     .map(([k]) => {
       switch (k) {
-        case "content":
-          return "содержание и ремонт жилья";
-        case "heating":
-          return "отопление";
-        case "water":
-          return "водоснабжение";
-        case "repair":
-          return "ремонт общедомового имущества";
-        default:
-          return "";
+        case "content": return ru ? "содержание и ремонт жилья" : "housing maintenance";
+        case "heating": return ru ? "отопление" : "heating";
+        case "water": return ru ? "водоснабжение" : "water supply";
+        case "repair": return ru ? "ремонт общедомового имущества" : "common property repair";
+        default: return "";
       }
     })
-    .filter(Boolean)
-    .map((s) => "– " + s)
-    .join("\n");
+    .filter(Boolean);
+  const periodPhrase = f.period
+    ? (ru ? " за период " : " for period ") + f.period
+    : (ru ? " за последние 12 месяцев" : " for the last 12 months");
+  const periodPhrase11 = f.period ? (ru ? " За период " : " For period ") + f.period + "." : "";
+  const servicesList = chosenServices.length
+    ? (ru ? "Информацию о расходах на услуги: " : "Information on expenses for services: ") + chosenServices.join(", ") + "."
+    : (ru ? "Информацию о выполненных работах и оказанных услугах по содержанию и ремонту общего имущества за последние 12 месяцев, включая стоимость и объемы (в соответствии с договором управления)." : "Information on works and services for common property over the last 12 months.");
+  const replyHow = (f.replyMethod === "inPerson")
+    ? (ru ? "выдать ответ на руки при личном обращении" : "provide the response in person")
+    : (ru ? "направить письменный ответ почтовым отправлением по вышеуказанному адресу" : "send the written response by mail to the address above");
+  return { chosenServices, periodPhrase, periodPhrase11, servicesList, replyHow, ru };
+}
 
-  const header = lang === "ru"
-    ? `Руководителю\n${f.ukName || "___________"}\n${f.ukAddress || "___________"}\n\nОт ${f.fullName || "___________"}\nПроживающего по адресу\n${f.address || "___________"}\n${f.emailForReply ? "Тел./Email: " + f.emailForReply : ""}`
-    : `To the head of\n${f.ukName || "___________"}\n${f.ukAddress || "___________"}\n\nFrom ${f.fullName || "___________"}\nResiding at\n${f.address || "___________"}\n${f.emailForReply ? "Tel/Email: " + f.emailForReply : ""}`;
+function getLetterPreviewFromData(f) {
+  if (!f) f = state.constructorForm;
+  const lang = state.lang;
+  const { periodPhrase, periodPhrase11, servicesList, replyHow, ru } = getRequestDocParts(f, lang);
 
-  const bodyIntro = lang === "ru"
-    ? "В соответствии с Федеральным законом № 402‑ФЗ «О бухгалтерском учёте» требую предоставить и направить мне по указанному выше адресу правоустанавливающие документы и сведения, подтверждающие начисления и расходы по следующим услугам:"
-    : "In accordance with Federal Law No. 402‑FZ \"On Accounting\" I demand to be provided with and sent to the address specified above the legal documents and information confirming charges and expenses for the following services:";
+  const title = ru
+    ? "ЗАПРОС о предоставлении информации, связанной с управлением многоквартирным домом (во исполнение ст. 165 ЖК РФ и Постановления Правительства РФ № 416)"
+    : "REQUEST for information related to management of a multi-apartment building (pursuant to Art. 165 Housing Code and RF Government Decree No. 416)";
 
-  const bodyList = chosenServices || (lang === "ru" ? "– перечень услуг" : "– list of services");
+  const header = ru
+    ? `Кому: ${f.ukName || "___________"}\nОт кого: ${f.fullName || "___________"}\nПаспорт: серия ${f.passportSeries || "____"} номер ${f.passportNumber || "______"}, выдан ${f.passportIssued || "___________"}\nАдрес регистрации и фактического проживания: ${f.address || "___________"}\nКонтактный телефон: ${f.phone || "___________"}  Email: ${f.emailForReply || "___________"}`
+    : `To: ${f.ukName || "___________"}\nFrom: ${f.fullName || "___________"}\nPassport: series ${f.passportSeries || "____"} no. ${f.passportNumber || "______"}, issued ${f.passportIssued || "___________"}\nAddress: ${f.address || "___________"}\nPhone: ${f.phone || "___________"}  Email: ${f.emailForReply || "___________"}`;
 
-  const bodyPeriod = lang === "ru"
-    ? `Требую предоставить расшифровку начислений за период: ${f.period || "___________"}.`
-    : `I demand a breakdown of charges for the period: ${f.period || "___________"}.`;
+  const body = ru
+    ? `Текст запроса:\n\nЯ, ${f.fullName || "___________"}, являюсь собственником/нанимателем жилого помещения по вышеуказанному адресу. На основании статьи 165 Жилищного кодекса РФ и п. 31, 34-38 Постановления Правительства РФ № 416 от 15.05.2013 "О порядке осуществления деятельности по управлению многоквартирными домами", ПРОШУ:\n\nПредоставить мне в срок, установленный законодательством (не более 10 рабочих дней / 20 календарных дней согласно п. 67 Стандартов раскрытия информации), следующую информацию по моему многоквартирному дому:\n\n1. Сведения о начислениях и задолженности:\n1.1. Имеется ли у меня задолженность по оплате жилищно-коммунальных услуг на дату составления ответа? Если да — с детализацией по видам услуг и периодам.${periodPhrase11}\n1.2. Помесячные объемы потребленных коммунальных ресурсов по показаниям общедомовых приборов учета${periodPhrase}.\n\n2. Сведения о расходовании средств:\n${servicesList}\nСведения о заключенных договорах с подрядными организациями на выполнение работ (с указанием предмета договора и стоимости), если такие работы оплачивались за счет средств собственников.\n\n3. Сведения об управляющей организации: Режим работы, контактные телефоны аварийно-диспетчерской службы.\n\n4. Сведения о тарифах и нормативах: Действующие тарифы на коммунальные услуги и размер платы за содержание жилого помещения с расшифровкой (ставки за управление, содержание, текущий ремонт).\n\n5. Иная информация: ${f.extraInfo || (ru ? "при необходимости" : "if applicable")}.\n\nСпособ получения ответа: Прошу ${replyHow}.\n\nДата: «»______ 20   г.\nПодпись: _______________`
+    : `Request:\n\nI, ${f.fullName || "___________"}, am the owner/tenant of the residential premises at the above address. Under Art. 165 of the Housing Code of the RF and paras. 31, 34-38 of RF Government Decree No. 416 of 15.05.2013, I REQUEST:\n\nTo be provided within the statutory time limit with the following information. 1) Charges and arrears${periodPhrase11} 1.2) Monthly consumption${periodPhrase}. 2) Expenditure: ${servicesList} 3) MC details and emergency contacts. 4) Tariffs. 5) Other: ${f.extraInfo || "if applicable"}.\n\nResponse: ${replyHow}.\n\nDate ________  Signature ________`;
 
-  const bodyLegal = lang === "ru"
-    ? "Требую предоставить информацию о законных основаниях взимания денежных средств и ведения деятельности по указанному адресу."
-    : "I demand information on the legal grounds for collecting funds and conducting activities at the specified address.";
-
-  const bodySend = lang === "ru"
-    ? "Информацию прошу направить в письменном виде по адресу проживания и (или) на электронную почту, указанную в обращении."
-    : "Please send the information in writing to my residential address and/or to the email address indicated in this request.";
-
-  const footer = lang === "ru" ? "Дата ________\nПодпись ________" : "Date ________\nSignature ________";
-
-  return `${header}\n\n${lang === "ru" ? "ЗАЯВЛЕНИЕ" : "APPLICATION"}\n\n${bodyIntro}\n\n${bodyList}\n\n${bodyPeriod}\n\n${bodyLegal}\n\n${bodySend}\n\n${footer}`.trim();
+  return `${title}\n\n${header}\n\n${body}`.trim();
 }
 
 function getLetterPreview() {
@@ -902,57 +933,32 @@ function escapeHtml(s) {
 }
 
 function buildPdfDocumentHtml(f, ru) {
-  const chosenServices = Object.entries(f.services || {})
-    .filter(([, v]) => v)
-    .map(([k]) => {
-      switch (k) {
-        case 'content': return ru ? 'содержание и ремонт жилья' : 'housing maintenance';
-        case 'heating': return ru ? 'отопление' : 'heating';
-        case 'water': return ru ? 'водоснабжение' : 'water supply';
-        case 'repair': return ru ? 'ремонт общедомового имущества' : 'common property repair';
-        default: return '';
-      }
-    })
-    .filter(Boolean)
-    .map((s) => '– ' + s)
-    .join('<br>');
+  const { periodPhrase, periodPhrase11, servicesList, replyHow } = getRequestDocParts(f, ru ? 'ru' : 'en');
 
-  const headerHtml = `
-    <div style="text-align:right; font-size:11pt; line-height:1.4; margin-bottom:14px;">
-      ${ru ? 'Руководителю' : 'To the head of'}<br>
-      ${escapeHtml(f.ukName || '___________')}<br>
-      ${escapeHtml(f.ukAddress || '___________')}<br>
-      <br>
-      ${ru ? 'От ' : 'From '}${escapeHtml(f.fullName || '___________')}<br>
-      ${ru ? 'Проживающего по адресу' : 'Residing at'}<br>
-      ${escapeHtml(f.address || '___________')}<br>
-      ${f.emailForReply ? (ru ? 'Тел./Email: ' : 'Tel/Email: ') + escapeHtml(f.emailForReply) : ''}
-    </div>`;
-  const titleHtml = `<div style="text-align:center; font-size:13pt; font-weight:bold; margin-bottom:14px;">${ru ? 'ЗАЯВЛЕНИЕ' : 'APPLICATION'}</div>`;
-  const intro = ru
-    ? 'В соответствии с Федеральным законом № 402‑ФЗ «О бухгалтерском учёте» требую предоставить и направить мне по указанному выше адресу правоустанавливающие документы и сведения, подтверждающие начисления и расходы по следующим услугам:'
-    : 'In accordance with Federal Law No. 402‑FZ "On Accounting" I demand to be provided with and sent to the address specified above the legal documents and information confirming charges and expenses for the following services:';
-  const listText = chosenServices || (ru ? 'перечень услуг' : 'list of services');
-  const periodText = (ru ? 'Требую предоставить расшифровку начислений за период: ' : 'I demand a breakdown of charges for the period: ') + escapeHtml(f.period || '___________') + '.';
-  const legalText = ru
-    ? 'Требую предоставить информацию о законных основаниях взимания денежных средств и ведения деятельности по указанному адресу.'
-    : 'I demand information on the legal grounds for collecting funds and conducting activities at the specified address.';
-  const sendText = ru
-    ? 'Информацию прошу направить в письменном виде по адресу проживания и (или) на электронную почту, указанную в обращении.'
-    : 'Please send the information in writing to my residential address and/or to the email address indicated in this request.';
+  const headerBlock = ru
+    ? `Кому: ${escapeHtml(f.ukName || '___________')}<br>От кого: ${escapeHtml(f.fullName || '___________')}<br>Паспорт: серия ${escapeHtml(f.passportSeries || '____')} номер ${escapeHtml(f.passportNumber || '______')}, выдан ${escapeHtml(f.passportIssued || '___________')}<br>Адрес регистрации и фактического проживания: ${escapeHtml(f.address || '___________')}<br>Контактный телефон: ${escapeHtml(f.phone || '___________')}  Email: ${escapeHtml(f.emailForReply || '___________')}`
+    : `To: ${escapeHtml(f.ukName || '___________')}<br>From: ${escapeHtml(f.fullName || '___________')}<br>Passport: ${escapeHtml(f.passportSeries || '____')} ${escapeHtml(f.passportNumber || '______')}, issued ${escapeHtml(f.passportIssued || '___________')}<br>Address: ${escapeHtml(f.address || '___________')}<br>Phone: ${escapeHtml(f.phone || '___________')}  Email: ${escapeHtml(f.emailForReply || '___________')}`;
 
-  return `
-    <div style="font-size:11pt; line-height:1.5; text-align:left;">
-      <p style="margin:0 0 8px;">${intro}</p>
-      <p style="margin:0 0 10px;">${listText}</p>
-      <p style="margin:0 0 8px;">${periodText}</p>
-      <p style="margin:0 0 8px;">${legalText}</p>
-      <p style="margin:0 0 20px;">${sendText}</p>
-      <p style="margin:0; display:flex; justify-content:space-between;">
-        <span>${ru ? 'Дата ________' : 'Date ________'}</span>
-        <span>${ru ? 'Подпись ________' : 'Signature ________'}</span>
-      </p>
-    </div>`;
+  const bodyContent = ru
+    ? `<p style="margin:0 0 6px;"><strong>Текст запроса:</strong></p>
+<p style="margin:0 0 8px;">Я, ${escapeHtml(f.fullName || '___________')}, являюсь собственником/нанимателем жилого помещения по вышеуказанному адресу. На основании статьи 165 Жилищного кодекса РФ и п. 31, 34-38 Постановления Правительства РФ № 416 от 15.05.2013 "О порядке осуществления деятельности по управлению многоквартирными домами", ПРОШУ:</p>
+<p style="margin:0 0 8px;">Предоставить мне в срок, установленный законодательством (не более 10 рабочих дней / 20 календарных дней согласно п. 67 Стандартов раскрытия информации), следующую информацию по моему многоквартирному дому:</p>
+<p style="margin:0 0 4px;"><strong>1. Сведения о начислениях и задолженности:</strong></p>
+<p style="margin:0 0 4px;">1.1. Имеется ли у меня задолженность по оплате жилищно-коммунальных услуг на дату составления ответа? Если да — с детализацией по видам услуг и периодам.${periodPhrase11 ? ' ' + periodPhrase11 : ''}</p>
+<p style="margin:0 0 6px;">1.2. Помесячные объемы потребленных коммунальных ресурсов по показаниям общедомовых приборов учета${periodPhrase}.</p>
+<p style="margin:0 0 4px;"><strong>2. Сведения о расходовании средств:</strong></p>
+<p style="margin:0 0 4px;">${servicesList}</p>
+<p style="margin:0 0 6px;">Сведения о заключенных договорах с подрядными организациями на выполнение работ (с указанием предмета договора и стоимости), если такие работы оплачивались за счет средств собственников.</p>
+<p style="margin:0 0 4px;"><strong>3. Сведения об управляющей организации:</strong> Режим работы, контактные телефоны аварийно-диспетчерской службы.</p>
+<p style="margin:0 0 4px;"><strong>4. Сведения о тарифах и нормативах:</strong> Действующие тарифы на коммунальные услуги и размер платы за содержание жилого помещения с расшифровкой (ставки за управление, содержание, текущий ремонт).</p>
+<p style="margin:0 0 4px;"><strong>5. Иная информация:</strong> ${escapeHtml(f.extraInfo || 'при необходимости')}.</p>
+<p style="margin:0 0 8px;"><strong>Способ получения ответа:</strong> Прошу ${replyHow}.</p>
+<p style="margin:16px 0 0; display:flex; justify-content:space-between;"><span>Дата: «»______ 20&nbsp;&nbsp;&nbsp;г.</span><span>Подпись: _______________</span></p>`
+    : `<p style="margin:0 0 6px;"><strong>Request:</strong></p>
+<p style="margin:0 0 8px;">I, ${escapeHtml(f.fullName || '___________')}, request the following information under Art. 165 Housing Code and Decree No. 416. 1) Charges and arrears${periodPhrase11}. 1.2) Consumption${periodPhrase}. 2) ${servicesList} 3) MC contacts. 4) Tariffs. 5) ${escapeHtml(f.extraInfo || 'if applicable')}. Response: ${replyHow}.</p>
+<p style="margin:16px 0 0; display:flex; justify-content:space-between;"><span>Date ________</span><span>Signature ________</span></p>`;
+
+  return `<div style="font-size:10pt; line-height:1.4; margin-bottom:12px;">${headerBlock}</div><div style="font-size:10pt; line-height:1.45; text-align:left;">${bodyContent}</div>`;
 }
 
 function doHtml2Pdf(wrap, filename, overlay) {
@@ -985,23 +991,15 @@ function downloadOrderPdf(order) {
   if (!f) return;
   const ru = state.lang === 'ru';
 
-  const headerHtml = `
-    <div style="text-align:right; font-size:11pt; line-height:1.4; margin-bottom:14px;">
-      ${ru ? 'Руководителю' : 'To the head of'}<br>
-      ${escapeHtml(f.ukName || '___________')}<br>
-      ${escapeHtml(f.ukAddress || '___________')}<br>
-      <br>
-      ${ru ? 'От ' : 'From '}${escapeHtml(f.fullName || '___________')}<br>
-      ${ru ? 'Проживающего по адресу' : 'Residing at'}<br>
-      ${escapeHtml(f.address || '___________')}<br>
-      ${f.emailForReply ? (ru ? 'Тел./Email: ' : 'Tel/Email: ') + escapeHtml(f.emailForReply) : ''}
-    </div>`;
-  const titleHtml = `<div style="text-align:center; font-size:13pt; font-weight:bold; margin-bottom:14px;">${ru ? 'ЗАЯВЛЕНИЕ' : 'APPLICATION'}</div>`;
+  const titleText = ru
+    ? 'ЗАПРОС о предоставлении информации, связанной с управлением многоквартирным домом (во исполнение ст. 165 ЖК РФ и Постановления Правительства РФ № 416)'
+    : 'REQUEST for information related to management of a multi-apartment building (Art. 165 Housing Code, RF Government Decree No. 416)';
+  const titleHtml = `<div style="text-align:center; font-size:11pt; font-weight:bold; margin-bottom:14px; line-height:1.3;">${titleText}</div>`;
   const bodyHtml = buildPdfDocumentHtml(f, ru);
 
   const wrap = document.createElement('div');
   wrap.style.cssText = 'width:210mm; padding:20mm; background:#fff; font-family:Arial,sans-serif; color:#000; box-sizing:border-box;';
-  wrap.innerHTML = headerHtml + titleHtml + bodyHtml;
+  wrap.innerHTML = titleHtml + bodyHtml;
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed; inset:0; background:#fff; z-index:10000; overflow:auto; display:flex; justify-content:center; padding:20px 0;';
@@ -1009,7 +1007,7 @@ function downloadOrderPdf(order) {
   document.body.appendChild(overlay);
 
   const name = (f.ukName || 'Zapros').replace(/[^a-zA-Zа-яА-Я0-9]/g, '_').slice(0, 30);
-  const filename = `Zayavlenie_UK_${name}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const filename = `Zapros_165JK_${name}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
   function runPdf() {
     requestAnimationFrame(() => {
@@ -1228,6 +1226,24 @@ function renderHome() {
                 <div class="stacked-label">${tForm.address}</div>
                 <input class="input" name="address" value="${state.constructorForm.address}" placeholder="${tForm.addressPlaceholder}" />
               </div>
+              <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="flex:0 0 80px;">
+                  <div class="stacked-label">${tForm.passportSeries}</div>
+                  <input class="input" name="passportSeries" value="${state.constructorForm.passportSeries}" placeholder="0000" maxlength="4" />
+                </div>
+                <div style="flex:0 0 120px;">
+                  <div class="stacked-label">${tForm.passportNumber}</div>
+                  <input class="input" name="passportNumber" value="${state.constructorForm.passportNumber}" placeholder="000000" maxlength="6" />
+                </div>
+                <div style="flex:1;min-width:180px;">
+                  <div class="stacked-label">${tForm.passportIssued}</div>
+                  <input class="input" name="passportIssued" value="${state.constructorForm.passportIssued}" placeholder="${tForm.passportIssuedPlaceholder}" />
+                </div>
+              </div>
+              <div class="field">
+                <div class="stacked-label">${tForm.phone}</div>
+                <input class="input" name="phone" value="${state.constructorForm.phone}" placeholder="${tForm.phonePlaceholder}" type="tel" />
+              </div>
               <div class="field">
                 <div class="stacked-label">${tForm.ukName}</div>
                 <input class="input" name="ukName" value="${state.constructorForm.ukName}" placeholder="${tForm.ukNamePlaceholder}" />
@@ -1251,7 +1267,18 @@ function renderHome() {
               </div>
               <div class="field">
                 <div class="stacked-label">${tForm.email}</div>
-                <input class="input" name="emailForReply" value="${state.constructorForm.emailForReply}" placeholder="${tForm.emailPlaceholder}" />
+                <input class="input" name="emailForReply" value="${state.constructorForm.emailForReply}" placeholder="${tForm.emailPlaceholder}" type="email" />
+              </div>
+              <div class="field">
+                <div class="stacked-label">${tForm.replyMethod}</div>
+                <div class="checkbox-row">
+                  <label class="checkbox-pill"><input type="radio" name="replyMethod" value="mail" ${state.constructorForm.replyMethod === 'mail' ? 'checked' : ''} /> ${tForm.replyByMail}</label>
+                  <label class="checkbox-pill"><input type="radio" name="replyMethod" value="inPerson" ${state.constructorForm.replyMethod === 'inPerson' ? 'checked' : ''} /> ${tForm.replyInPerson}</label>
+                </div>
+              </div>
+              <div class="field">
+                <div class="stacked-label">${tForm.extraInfo}</div>
+                <textarea class="textarea input" name="extraInfo" placeholder="${tForm.extraInfoPlaceholder}" rows="2">${(state.constructorForm.extraInfo || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
               </div>
               <div class="field">
                 <label class="checkbox-pill">
@@ -1328,7 +1355,7 @@ function renderHome() {
   // Обработчики конструктора — делегирование на форму для надёжной работы в TMA
   const form = document.getElementById("constructor-form");
   if (form) {
-    const textFields = ["fullName", "address", "ukName", "ukAddress", "period", "emailForReply"];
+    const textFields = ["fullName", "address", "passportSeries", "passportNumber", "passportIssued", "phone", "ukName", "ukAddress", "period", "emailForReply", "replyMethod", "extraInfo"];
     const handleInput = (e) => {
       const el = e.target;
       const name = el?.getAttribute?.("name");
@@ -1448,10 +1475,16 @@ function loadDraftIntoConstructor(draft) {
   state.constructorForm = {
     fullName: d.fullName || '',
     address: d.address || '',
+    passportSeries: d.passportSeries || '',
+    passportNumber: d.passportNumber || '',
+    passportIssued: d.passportIssued || '',
+    phone: d.phone || '',
     ukName: d.ukName || '',
     ukAddress: d.ukAddress || '',
     period: d.period || '',
     emailForReply: d.emailForReply || '',
+    replyMethod: d.replyMethod || 'mail',
+    extraInfo: d.extraInfo || '',
     services: d.services || { content: true, heating: false, water: false, repair: false },
   };
   state.withExpert = !!d.withExpert;
