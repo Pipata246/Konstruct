@@ -2222,6 +2222,123 @@ function renderLegalPage(type) {
 
 // ========== BLOG PAGE ==========
 
+function openBlogPostModal(tBlog, ru) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'blog-post-modal';
+  overlay.innerHTML = `
+    <div class="modal-content" style="max-width:500px;max-height:90vh;overflow:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 class="modal-title" style="margin:0">${tBlog.createPost}</h3>
+        <button class="blog-modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <form id="blog-create-form">
+        <div class="field">
+          <div class="stacked-label">${tBlog.titleRu}</div>
+          <input class="input" name="title_ru" placeholder="${ru ? 'Заголовок на русском' : 'Title in Russian'}" />
+        </div>
+        <div class="field">
+          <div class="stacked-label">${tBlog.titleEn}</div>
+          <input class="input" name="title_en" placeholder="${ru ? 'Заголовок на английском' : 'Title in English'}" />
+        </div>
+        <div class="field">
+          <div class="stacked-label">${tBlog.bodyRu}</div>
+          <textarea class="textarea input" name="body_ru" rows="4" placeholder="${ru ? 'Текст статьи' : 'Article text'}"></textarea>
+        </div>
+        <div class="field">
+          <div class="stacked-label">${tBlog.bodyEn}</div>
+          <textarea class="textarea input" name="body_en" rows="4" placeholder="${ru ? 'Article text' : 'Text in English'}"></textarea>
+        </div>
+        <div class="field">
+          <div class="stacked-label">${tBlog.addPhoto} / ${tBlog.addVideo}</div>
+          <input type="file" id="blog-media-input" accept="image/*,video/*" multiple />
+          <div class="small muted-text" style="margin-top:4px">${tBlog.orPasteUrl}</div>
+          <input type="url" id="blog-media-url" class="input" placeholder="https://..." style="margin-top:4px" />
+          <div id="blog-media-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button type="submit" class="primary-btn">${tBlog.publish}</button>
+          <button type="button" class="secondary-btn blog-modal-close">${state.lang === 'ru' ? 'Закрыть' : 'Close'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px';
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelectorAll('.blog-modal-close').forEach((b) => b.addEventListener('click', close));
+
+  const form = overlay.querySelector('#blog-create-form');
+  const mediaInput = overlay.querySelector('#blog-media-input');
+  const mediaPreview = overlay.querySelector('#blog-media-preview');
+  const mediaUrlInput = overlay.querySelector('#blog-media-url');
+  let pendingMedia = [];
+
+  if (mediaInput) {
+    mediaInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      for (const f of files) {
+        try {
+          const m = await uploadBlogMedia(f);
+          pendingMedia.push(m);
+          const el = m.type === 'video'
+            ? `<video controls style="width:80px;height:60px;object-fit:cover;border-radius:6px" src="${escapeHtml(m.url)}"></video>`
+            : `<img src="${escapeHtml(m.url)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px" alt="" />`;
+          mediaPreview.innerHTML += el;
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+      mediaInput.value = '';
+    });
+  }
+  if (mediaUrlInput) {
+    mediaUrlInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const url = mediaUrlInput.value.trim();
+        if (!url) return;
+        const type = /\.(mp4|webm|ogg|mov)$/i.test(url) ? 'video' : 'photo';
+        pendingMedia.push({ type, url });
+        const el = type === 'video'
+          ? `<video controls style="width:80px;height:60px;object-fit:cover;border-radius:6px" src="${escapeHtml(url)}"></video>`
+          : `<img src="${escapeHtml(url)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px" alt="" />`;
+        mediaPreview.innerHTML += el;
+        mediaUrlInput.value = '';
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const title_ru = fd.get('title_ru')?.toString().trim() || '';
+      const title_en = fd.get('title_en')?.toString().trim() || '';
+      const body_ru = fd.get('body_ru')?.toString().trim() || '';
+      const body_en = fd.get('body_en')?.toString().trim() || '';
+      if (!title_ru && !title_en) {
+        alert(ru ? 'Укажите заголовок' : 'Enter title');
+        return;
+      }
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      try {
+        await createBlogPost({ title_ru, title_en, body_ru, body_en, media: pendingMedia });
+        close();
+        alert(tBlog.postCreated);
+        renderBlog();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  }
+}
+
 async function renderBlog() {
   const tBlog = I18N[state.lang].blog;
   const lang = state.lang;
@@ -2290,52 +2407,22 @@ async function renderBlog() {
     })
     .join('');
 
-  const adminFormHtml = state.isAdmin
-    ? `
-    <section class="section">
-      <div class="neo-card">
-        <h3 class="price-title">${tBlog.createPost}</h3>
-        <form id="blog-create-form">
-          <div class="field">
-            <div class="stacked-label">${tBlog.titleRu}</div>
-            <input class="input" name="title_ru" placeholder="${ru ? 'Заголовок на русском' : 'Title in Russian'}" />
-          </div>
-          <div class="field">
-            <div class="stacked-label">${tBlog.titleEn}</div>
-            <input class="input" name="title_en" placeholder="${ru ? 'Заголовок на английском' : 'Title in English'}" />
-          </div>
-          <div class="field">
-            <div class="stacked-label">${tBlog.bodyRu}</div>
-            <textarea class="textarea input" name="body_ru" rows="4" placeholder="${ru ? 'Текст статьи' : 'Article text'}"></textarea>
-          </div>
-          <div class="field">
-            <div class="stacked-label">${tBlog.bodyEn}</div>
-            <textarea class="textarea input" name="body_en" rows="4" placeholder="${ru ? 'Article text' : 'Text in English'}"></textarea>
-          </div>
-          <div class="field">
-            <div class="stacked-label">${tBlog.addPhoto} / ${tBlog.addVideo}</div>
-            <input type="file" id="blog-media-input" accept="image/*,video/*" multiple />
-            <div class="small muted-text" style="margin-top:4px">${tBlog.orPasteUrl}</div>
-            <input type="url" id="blog-media-url" class="input" placeholder="https://..." style="margin-top:4px" />
-            <div id="blog-media-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
-          </div>
-          <button type="submit" class="primary-btn">${tBlog.publish}</button>
-        </form>
-      </div>
-    </section>
-  `
+  const addPostBtnHtml = state.isAdmin
+    ? `<button class="blog-add-post-btn" id="blog-add-post-btn" title="${tBlog.createPost}" aria-label="${tBlog.createPost}">
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+       </button>`
     : '';
 
   appRoot.innerHTML = `
-    <div class="landing blog-page">
+    <div class="landing blog-page" style="position:relative">
       <section class="section blog-hero-section">
-        <div class="neo-card">
+        <div class="neo-card" style="position:relative">
+          ${addPostBtnHtml}
           <a href="#" class="back-link">&larr; ${ru ? 'На главную' : 'Back to Home'}</a>
           <h1 class="page-title">${tBlog.title}</h1>
           <p class="section-subtitle">${tBlog.subtitle}</p>
         </div>
       </section>
-      ${adminFormHtml}
       <section class="section blog-posts-section">
         ${state.blogPosts.length === 0 ? `<p class="small muted-text">${ru ? 'Пока нет постов.' : 'No posts yet.'}</p>` : postsHTML}
       </section>
@@ -2343,77 +2430,7 @@ async function renderBlog() {
   `;
 
   if (state.isAdmin) {
-    const form = document.getElementById('blog-create-form');
-    const mediaInput = document.getElementById('blog-media-input');
-    const mediaPreview = document.getElementById('blog-media-preview');
-    let pendingMedia = [];
-
-    if (mediaInput) {
-      mediaInput.addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files || []);
-        for (const f of files) {
-          try {
-            const m = await uploadBlogMedia(f);
-            pendingMedia.push(m);
-            const el = m.type === 'video'
-              ? `<video controls style="width:80px;height:60px;object-fit:cover;border-radius:6px" src="${escapeHtml(m.url)}"></video>`
-              : `<img src="${escapeHtml(m.url)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px" />`;
-            mediaPreview.innerHTML += el;
-          } catch (err) {
-            alert(err.message);
-          }
-        }
-        mediaInput.value = '';
-      });
-    }
-    const mediaUrlInput = document.getElementById('blog-media-url');
-    if (mediaUrlInput) {
-      mediaUrlInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const url = mediaUrlInput.value.trim();
-          if (!url) return;
-          const type = /\.(mp4|webm|ogg|mov)$/i.test(url) ? 'video' : 'photo';
-          pendingMedia.push({ type, url });
-          const el = type === 'video'
-            ? `<video controls style="width:80px;height:60px;object-fit:cover;border-radius:6px" src="${escapeHtml(url)}"></video>`
-            : `<img src="${escapeHtml(url)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px" alt="" />`;
-          if (mediaPreview) mediaPreview.innerHTML += el;
-          mediaUrlInput.value = '';
-        }
-      });
-    }
-
-    if (form) {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fd = new FormData(form);
-        const title_ru = fd.get('title_ru')?.toString().trim() || '';
-        const title_en = fd.get('title_en')?.toString().trim() || '';
-        const body_ru = fd.get('body_ru')?.toString().trim() || '';
-        const body_en = fd.get('body_en')?.toString().trim() || '';
-        if (!title_ru && !title_en) {
-          alert(ru ? 'Укажите заголовок' : 'Enter title');
-          return;
-        }
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) btn.disabled = true;
-        try {
-          await createBlogPost({ title_ru, title_en, body_ru, body_en, media: pendingMedia });
-          alert(tBlog.postCreated);
-          pendingMedia = [];
-          if (mediaPreview) mediaPreview.innerHTML = '';
-          const urlInp = document.getElementById('blog-media-url');
-          if (urlInp) urlInp.value = '';
-          form.reset();
-          renderBlog();
-        } catch (err) {
-          alert(err.message);
-        } finally {
-          if (btn) btn.disabled = false;
-        }
-      });
-    }
+    document.getElementById('blog-add-post-btn')?.addEventListener('click', () => openBlogPostModal(tBlog, ru));
   }
 
   document.querySelectorAll('.btn-add-comment').forEach((btn) => {

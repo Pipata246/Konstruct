@@ -486,6 +486,43 @@ html {
   flex-shrink: 0;
 }
 
+.blog-add-post-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.6), -4px -4px 12px rgba(255, 255, 255, 0.9);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.blog-add-post-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 8px 8px 16px rgba(163, 177, 198, 0.7), -6px -6px 14px rgba(255, 255, 255, 1);
+}
+
+.blog-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 8px;
+}
+
+.blog-modal-close:hover {
+  color: var(--text-main);
+}
+
 .page-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
