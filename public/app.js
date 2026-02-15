@@ -2599,6 +2599,12 @@ function initShell() {
       const currentHash = window.location.hash;
       const isOnBlogPage = currentHash === "#blog" || currentHash.startsWith("#blog/");
 
+      // Блог, Админ — отдельные страницы: явная навигация
+      if (href === "#blog" || href === "#admin") {
+        e.preventDefault();
+        window.location.hash = href || "#";
+        return;
+      }
       if (isOnBlogPage && href !== "#blog") {
         e.preventDefault();
         window.location.hash = href;
