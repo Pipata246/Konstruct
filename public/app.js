@@ -366,35 +366,100 @@ const I18N = {
     },
     legal: {
       offerTitle: "Публичная оферта",
-      offerBody: `
-<p><strong>1. Общие положения</strong></p>
-<p>Настоящая оферта является официальным предложением сервиса «Конструкт» (далее — Исполнитель) заключить договор на оказание услуг по формированию официальных запросов в управляющие компании по Федеральному закону № 402-ФЗ «О бухгалтерском учёте».</p>
-<p><strong>2. Предмет договора</strong></p>
-<p>Исполнитель оказывает Пользователю услуги по формированию текста запроса в УК, подготовке черновика в формате PDF и (при выборе соответствующего тарифа) проверке документа экспертом.</p>
-<p><strong>3. Порядок оказания услуг</strong></p>
-<p>Пользователь заполняет форму конструктора на сайте, указывая данные о себе, управляющей компании и периоде. Сервис формирует текст запроса и черновик PDF. При оплате тарифа с проверкой эксперта документ направляется на юридическую проверку.</p>
-<p><strong>4. Стоимость и оплата</strong></p>
-<p>Стоимость услуг указана на сайте: базовый тариф — 700 ₽, тариф с проверкой эксперта — 2 200 ₽. Оплата производится в соответствии с выбранным тарифом.</p>
-<p><strong>5. Контакты</strong></p>
+      privacyTitle: "Политика конфиденциальности",
+      backLink: "На главную",
+      offerPage: `
+<h2>1. Общие положения</h2>
+<p>Настоящая публичная оферта (далее — Оферта) является официальным предложением сервиса «Конструкт» (далее — Исполнитель) заключить договор оказания услуг на условиях, изложенных ниже, с любым физическим лицом (далее — Пользователь), которое примет условия настоящей Оферты.</p>
+<p>Акцептом Оферты в соответствии со статьёй 438 Гражданского кодекса РФ является факт оплаты услуг Пользователем.</p>
+
+<h2>2. Термины и определения</h2>
+<p><strong>Сервис</strong> — веб-сайт и мини-приложение «Конструкт», доступные в Telegram и в браузере.</p>
+<p><strong>Услуга</strong> — формирование текста официального запроса в управляющую компанию (УК) в соответствии с Федеральным законом № 402-ФЗ «О бухгалтерском учёте», подготовка черновика в формате PDF, а при выборе соответствующего тарифа — юридическая проверка документа экспертом.</p>
+<p><strong>Документ</strong> — сформированный запрос в формате PDF, готовый к отправке в УК.</p>
+
+<h2>3. Предмет договора</h2>
+<p>Исполнитель обязуется оказать Пользователю Услугу в соответствии с выбранным тарифом, а Пользователь обязуется оплатить Услугу в размере и порядке, предусмотренных настоящей Офертой.</p>
+
+<h2>4. Тарифы и стоимость</h2>
+<p><strong>Базовый тариф (без проверки эксперта)</strong> — 700 рублей. Включает: пошаговый конструктор запроса, черновик PDF до оплаты, готовый документ после оплаты.</p>
+<p><strong>Тариф с проверкой эксперта</strong> — 2 200 рублей. Включает всё из базового тарифа плюс ручную проверку юристом, комментарии эксперта и финальный PDF.</p>
+<p>Исполнитель вправе изменять стоимость услуг. Актуальные цены указаны на сайте в момент оформления заказа.</p>
+
+<h2>5. Порядок оказания услуг</h2>
+<p>5.1. Пользователь заполняет форму конструктора на Сайте, указывая данные о себе, управляющей компании и периоде начислений.</p>
+<p>5.2. Сервис формирует черновик текста запроса. Пользователь может сохранять черновики в личном кабинете.</p>
+<p>5.3. После оплаты выбранного тарифа Исполнитель предоставляет Пользователю готовый Документ в формате PDF.</p>
+<p>5.4. При выборе тарифа с проверкой эксперта срок оказания услуги может составлять до 3 рабочих дней.</p>
+
+<h2>6. Оплата</h2>
+<p>Оплата производится способами, указанными на Сайте (банковские карты, системы быстрых платежей и др.). Факт оплаты подтверждается электронным чеком.</p>
+
+<h2>7. Возврат средств</h2>
+<p>Возврат оплаты возможен до момента предоставления готового Документа при наличии технической возможности. Запрос направляется на <a href="mailto:support@konstruct.app">support@konstruct.app</a> или в Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+
+<h2>8. Ответственность</h2>
+<p>Исполнитель не несёт ответственности за использование Пользователем сформированного Документа и за действия УК. Сервис предоставляет типовой шаблон запроса; итоговое решение о направлении запроса принимает Пользователь.</p>
+
+<h2>9. Контакты</h2>
 <p>По вопросам оферты и услуг: <a href="mailto:support@konstruct.app">support@konstruct.app</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 `,
-      privacyTitle: "Политика конфиденциальности",
-      privacyBody: `
-<p><strong>1. Общие сведения</strong></p>
-<p>Сервис «Конструкт» соблюдает требования Федерального закона № 152-ФЗ «О персональных данных» и обеспечивает защиту персональных данных Пользователей.</p>
-<p><strong>2. Какие данные мы собираем</strong></p>
-<p>— Идентификатор Telegram (при входе через Mini App или по коду);<br/>
-— Имя, фамилия, имя пользователя в Telegram;<br/>
-— Фото профиля Telegram (опционально);<br/>
-— Данные, вводимые в конструктор: ФИО, адрес, название и адрес УК, период, email для ответа.</p>
-<p><strong>3. Цели обработки</strong></p>
-<p>Данные используются для формирования запроса, оказания услуг, связи с Пользователем и улучшения сервиса.</p>
-<p><strong>4. Хранение и передача</strong></p>
-<p>Данные хранятся на защищённых серверах. Передача третьим лицам — только в случаях, предусмотренных законом, или с согласия Пользователя.</p>
-<p><strong>5. Права Пользователя</strong></p>
-<p>Вы можете запросить доступ к своим данным, их исправление или удаление. Обращения: <a href="mailto:support@konstruct.app">support@konstruct.app</a> или <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
-<p><strong>6. Cookies и технологии</strong></p>
-<p>Сервис может использовать локальное хранилище браузера для сохранения сессии и настроек.</p>
+      privacyPage: `
+<h2>1. Общие сведения</h2>
+<p>Настоящая Политика конфиденциальности (далее — Политика) определяет порядок обработки и защиты персональных данных пользователей сервиса «Конструкт» (далее — Сервис, мы).</p>
+<p>Сервис соблюдает требования Федерального закона № 152-ФЗ «О персональных данных» и обеспечивает конфиденциальность и защиту персональных данных.</p>
+
+<h2>2. Оператор персональных данных</h2>
+<p>Оператором персональных данных является владелец сервиса «Конструкт». Контактная информация: <a href="mailto:support@konstruct.app">support@konstruct.app</a>, <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+
+<h2>3. Какие данные мы собираем</h2>
+<p><strong>При входе через Telegram Mini App или по коду:</strong></p>
+<ul>
+<li>Идентификатор пользователя Telegram (telegram_id);</li>
+<li>Имя, фамилия, имя пользователя (username) в Telegram;</li>
+<li>Фото профиля в Telegram (опционально, при наличии).</li>
+</ul>
+<p><strong>При использовании конструктора запроса:</strong></p>
+<ul>
+<li>ФИО;</li>
+<li>Адрес проживания;</li>
+<li>Название и адрес управляющей компании;</li>
+<li>Период начислений;</li>
+<li>Email для ответа (опционально).</li>
+</ul>
+
+<h2>4. Цели обработки</h2>
+<p>Персональные данные обрабатываются в целях:</p>
+<ul>
+<li>оказания услуг по формированию запросов в УК;</li>
+<li>идентификации Пользователя и связи с ним;</li>
+<li>сохранения черновиков в личном кабинете;</li>
+<li>улучшения качества Сервиса.</li>
+</ul>
+
+<h2>5. Правовые основания</h2>
+<p>Обработка осуществляется на основании согласия Пользователя, а также для исполнения договора оказания услуг.</p>
+
+<h2>6. Хранение и защита</h2>
+<p>Данные хранятся на защищённых серверах с использованием современных средств шифрования. Срок хранения — в течение срока оказания услуг и в соответствии с требованиями законодательства РФ.</p>
+
+<h2>7. Передача третьим лицам</h2>
+<p>Персональные данные не передаются третьим лицам, за исключением случаев, предусмотренных законодательством РФ, или при наличии явного согласия Пользователя.</p>
+
+<h2>8. Права Пользователя</h2>
+<p>В соответствии с ФЗ-152 вы имеете право:</p>
+<ul>
+<li>получить информацию об обработке ваших персональных данных;</li>
+<li>требовать уточнения, блокирования или удаления данных;</li>
+<li>отозвать согласие на обработку.</li>
+</ul>
+<p>Обращения направляйте на <a href="mailto:support@konstruct.app">support@konstruct.app</a> или в Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+
+<h2>9. Cookies и технологии</h2>
+<p>Сервис использует локальное хранилище браузера (localStorage) для сохранения сессии, настроек и черновиков. Это необходимо для работы личного кабинета и конструктора.</p>
+
+<h2>10. Изменения Политики</h2>
+<p>Мы вправе вносить изменения в настоящую Политику. Актуальная версия всегда доступна на данной странице.</p>
 `,
     },
     profile: {
@@ -548,27 +613,45 @@ const I18N = {
     },
     legal: {
       offerTitle: "Public offer",
-      offerBody: `
-<p><strong>1. General</strong></p>
-<p>This offer is an official proposal of the Konstruct service to conclude an agreement for the preparation of official requests to management companies under Federal Law No. 402-FZ on accounting.</p>
-<p><strong>2. Services</strong></p>
-<p>The service helps form request text, prepare a draft PDF, and (on selected plans) provide expert review.</p>
-<p><strong>3. Pricing and payment</strong></p>
-<p>Pricing is shown on the website: base plan — 700 ₽, plan with expert review — 2 200 ₽.</p>
-<p><strong>4. Contact</strong></p>
+      privacyTitle: "Privacy policy",
+      backLink: "Back to Home",
+      offerPage: `
+<h2>1. General</h2>
+<p>This Public Offer (hereinafter — Offer) is an official proposal of the Konstruct service (hereinafter — Provider) to conclude an agreement for the provision of services under the terms set forth below with any individual (hereinafter — User) who accepts these terms.</p>
+<p>Acceptance of the Offer constitutes the User's payment for the services.</p>
+
+<h2>2. Terms and definitions</h2>
+<p><strong>Service</strong> — the Konstruct website and mini-app available in Telegram and in a browser.</p>
+<p><strong>Service provided</strong> — formation of official request text to a management company (MC) under Federal Law No. 402-FZ on accounting, preparation of a draft PDF, and (on selected plans) legal review by an expert.</p>
+<p><strong>Document</strong> — the generated request in PDF format, ready for submission to the MC.</p>
+
+<h2>3. Subject matter</h2>
+<p>The Provider undertakes to provide the User with the Service according to the selected plan; the User undertakes to pay for the Service in the amount and manner set forth in this Offer.</p>
+
+<h2>4. Plans and pricing</h2>
+<p><strong>Base plan (without expert review)</strong> — 700 ₽. Includes: step-by-step constructor, draft PDF before payment, final document after payment.</p>
+<p><strong>Plan with expert review</strong> — 2 200 ₽. Includes everything from the base plan plus manual review by a lawyer and final PDF.</p>
+
+<h2>5. Contact</h2>
 <p><a href="mailto:support@konstruct.app">support@konstruct.app</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 `,
-      privacyTitle: "Privacy policy",
-      privacyBody: `
-<p><strong>1. Overview</strong></p>
-<p>Konstruct complies with applicable data protection laws and protects users' personal data.</p>
-<p><strong>2. Data we collect</strong></p>
-<p>— Telegram ID, name, username, profile photo;<br/>
-— Data entered in the constructor: full name, address, management company details, period, email.</p>
-<p><strong>3. Purpose</strong></p>
+      privacyPage: `
+<h2>1. Overview</h2>
+<p>This Privacy Policy defines how we collect, process, and protect personal data of users of the Konstruct service.</p>
+<p>We comply with applicable data protection laws and ensure confidentiality.</p>
+
+<h2>2. Data we collect</h2>
+<p><strong>When signing in via Telegram or code:</strong> Telegram ID, name, username, profile photo.</p>
+<p><strong>When using the constructor:</strong> Full name, address, MC name and address, billing period, email.</p>
+
+<h2>3. Purpose</h2>
 <p>Data is used to provide the service, form requests, and communicate with you.</p>
-<p><strong>4. Your rights</strong></p>
+
+<h2>4. Your rights</h2>
 <p>You may request access, correction, or deletion of your data. Contact: <a href="mailto:support@konstruct.app">support@konstruct.app</a> or <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+
+<h2>5. Cookies and storage</h2>
+<p>We use localStorage for session and drafts. This is required for the personal account and constructor.</p>
 `,
     },
     alerts: {
@@ -757,6 +840,10 @@ function render() {
     renderBlog();
   } else if (hash === "#profile") {
     renderProfile();
+  } else if (hash === "#legal" || hash === "#legal-offer" || hash === "#legal-privacy") {
+    if (hash === "#legal-offer") renderLegalPage("offer");
+    else if (hash === "#legal-privacy") renderLegalPage("privacy");
+    else renderLegalIndex();
   } else {
     renderHome();
   }
@@ -1001,22 +1088,6 @@ function renderHome() {
         </div>
       </section>
 
-      <section id="legal" class="section section-legal section-visible">
-        <div class="cards-row">
-          <article class="neo-card" id="legal-offer">
-            <h3 class="price-title">${tLegal.offerTitle}</h3>
-            <div class="legal-content small muted-text">
-              ${tLegal.offerBody}
-            </div>
-          </article>
-          <article class="neo-card" id="legal-privacy">
-            <h3 class="price-title">${tLegal.privacyTitle}</h3>
-            <div class="legal-content small muted-text">
-              ${tLegal.privacyBody}
-            </div>
-          </article>
-        </div>
-      </section>
     </div>
   `;
 
@@ -1320,6 +1391,61 @@ async function renderProfile() {
   });
 }
 
+// ========== LEGAL PAGES (оферта, политика) ==========
+
+function renderLegalIndex() {
+  const t = I18N[state.lang].legal;
+  const lang = state.lang;
+  appRoot.innerHTML = `
+    <div class="landing legal-page">
+      <section class="section section-visible">
+        <div class="neo-card">
+          <a href="#" class="back-link">&larr; ${t.backLink}</a>
+          <h1 class="page-title">${lang === "ru" ? "Документы" : "Legal"}</h1>
+          <p class="section-subtitle">${lang === "ru" ? "Выберите документ" : "Choose a document"}.</p>
+          <div class="legal-links" style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+            <a href="#legal-offer" class="primary-btn" style="text-align:center;text-decoration:none">${t.offerTitle}</a>
+            <a href="#legal-privacy" class="secondary-btn" style="text-align:center;text-decoration:none">${t.privacyTitle}</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+  document.querySelector(".back-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.hash = "";
+    render();
+  });
+}
+
+function renderLegalPage(type) {
+  const t = I18N[state.lang].legal;
+  const lang = state.lang;
+  const isOffer = type === "offer";
+  const title = isOffer ? t.offerTitle : t.privacyTitle;
+  const content = isOffer ? t.offerPage : t.privacyPage;
+
+  appRoot.innerHTML = `
+    <div class="landing legal-page">
+      <section class="section section-visible">
+        <div class="neo-card">
+          <a href="#" class="back-link">&larr; ${t.backLink}</a>
+          <h1 class="page-title">${title}</h1>
+          <div class="legal-content legal-page-content">
+            ${content}
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+
+  document.querySelector(".back-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.hash = "";
+    render();
+  });
+}
+
 // ========== BLOG PAGE ==========
 
 function renderBlog() {
@@ -1567,13 +1693,7 @@ function initShell() {
     });
   });
 
-  window.addEventListener("hashchange", () => {
-    render();
-    const hash = window.location.hash;
-    if (hash === "#legal-offer" || hash === "#legal-privacy") {
-      setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" }), 50);
-    }
-  });
+  window.addEventListener("hashchange", () => render());
 
   state.blogPosts = getDemoBlogPosts();
   initProfile();
