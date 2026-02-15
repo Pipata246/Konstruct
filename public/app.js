@@ -445,13 +445,13 @@ const I18N = {
 <p>Оплата производится способами, указанными на Сайте (банковские карты, системы быстрых платежей и др.). Факт оплаты подтверждается электронным чеком.</p>
 
 <h2>7. Возврат средств</h2>
-<p>Возврат оплаты возможен до момента предоставления готового Документа при наличии технической возможности. Запрос направляется на <a href="mailto:support@konstruct.app">support@konstruct.app</a> или в Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p>Возврат оплаты возможен до момента предоставления готового Документа при наличии технической возможности. Запрос направляется на <a href="mailto:practsuveren@yandex.ru">practsuveren@yandex.ru</a> или в Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 
 <h2>8. Ответственность</h2>
 <p>Исполнитель не несёт ответственности за использование Пользователем сформированного Документа и за действия УК. Сервис предоставляет типовой шаблон запроса; итоговое решение о направлении запроса принимает Пользователь.</p>
 
 <h2>9. Контакты</h2>
-<p>По вопросам оферты и услуг: <a href="mailto:support@konstruct.app">support@konstruct.app</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p>По вопросам оферты и услуг: <a href="mailto:practsuveren@yandex.ru">practsuveren@yandex.ru</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 `,
       privacyPage: `
 <h2>1. Общие сведения</h2>
@@ -459,7 +459,7 @@ const I18N = {
 <p>Сервис соблюдает требования Федерального закона № 152-ФЗ «О персональных данных» и обеспечивает конфиденциальность и защиту персональных данных.</p>
 
 <h2>2. Оператор персональных данных</h2>
-<p>Оператором персональных данных является владелец сервиса «Конструкт». Контактная информация: <a href="mailto:support@konstruct.app">support@konstruct.app</a>, <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p>Оператором персональных данных является владелец сервиса «Конструкт». Контактная информация: <a href="mailto:practsuveren@yandex.ru">practsuveren@yandex.ru</a>, <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 
 <h2>3. Какие данные мы собираем</h2>
 <p><strong>При входе через Telegram Mini App или по коду:</strong></p>
@@ -502,7 +502,7 @@ const I18N = {
 <li>требовать уточнения, блокирования или удаления данных;</li>
 <li>отозвать согласие на обработку.</li>
 </ul>
-<p>Обращения направляйте на <a href="mailto:support@konstruct.app">support@konstruct.app</a> или в Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p>Обращения направляйте на <a href="mailto:practsuveren@yandex.ru">practsuveren@yandex.ru</a> или в Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 
 <h2>9. Cookies и технологии</h2>
 <p>Сервис использует локальное хранилище браузера (localStorage) для сохранения сессии, настроек и черновиков. Это необходимо для работы личного кабинета и конструктора.</p>
@@ -688,7 +688,7 @@ const I18N = {
 <p><strong>Plan with expert review</strong> — 2 200 ₽. Includes everything from the base plan plus manual review by a lawyer and final PDF.</p>
 
 <h2>5. Contact</h2>
-<p><a href="mailto:support@konstruct.app">support@konstruct.app</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p><a href="mailto:practsuveren@yandex.ru">practsuveren@yandex.ru</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 `,
       privacyPage: `
 <h2>1. Overview</h2>
@@ -703,7 +703,7 @@ const I18N = {
 <p>Data is used to provide the service, form requests, and communicate with you.</p>
 
 <h2>4. Your rights</h2>
-<p>You may request access, correction, or deletion of your data. Contact: <a href="mailto:support@konstruct.app">support@konstruct.app</a> or <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p>You may request access, correction, or deletion of your data. Contact: <a href="mailto:practsuveren@yandex.ru">practsuveren@yandex.ru</a> or <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
 
 <h2>5. Cookies and storage</h2>
 <p>We use localStorage for session and drafts. This is required for the personal account and constructor.</p>
@@ -1293,7 +1293,7 @@ function renderHome() {
             <div class="neo-card">
             <div class="field">
               <div class="stacked-label">${tContacts.supportEmail}</div>
-              <div class="tag">support@konstruct.app</div>
+              <div class="tag">practsuveren@yandex.ru</div>
             </div>
             <div class="field">
               <div class="stacked-label">${tContacts.telegram}</div>
