@@ -2332,7 +2332,10 @@ function initShell() {
     });
   });
 
-  window.addEventListener("hashchange", () => render());
+  window.addEventListener("hashchange", () => {
+    window.scrollTo(0, 0);
+    render();
+  });
 
   state.blogPosts = getDemoBlogPosts();
   initProfile();
