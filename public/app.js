@@ -901,14 +901,7 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
-function downloadOrderPdf(order) {
-  const f = order?.data || state.constructorForm;
-  if (!f) return;
-  if (typeof window.html2pdf === 'undefined') {
-    alert(state.lang === 'ru' ? 'Библиотека PDF не загружена' : 'PDF library not loaded');
-    return;
-  }
-  const ru = state.lang === 'ru';
+function buildPdfDocumentHtml(f, ru) {
   const chosenServices = Object.entries(f.services || {})
     .filter(([, v]) => v)
     .map(([k]) => {
@@ -948,7 +941,7 @@ function downloadOrderPdf(order) {
     ? 'Информацию прошу направить в письменном виде по адресу проживания и (или) на электронную почту, указанную в обращении.'
     : 'Please send the information in writing to my residential address and/or to the email address indicated in this request.';
 
-  const bodyHtml = `
+  return `
     <div style="font-size:11pt; line-height:1.5; text-align:left;">
       <p style="margin:0 0 8px;">${intro}</p>
       <p style="margin:0 0 10px;">${listText}</p>
@@ -960,15 +953,9 @@ function downloadOrderPdf(order) {
         <span>${ru ? 'Подпись ________' : 'Signature ________'}</span>
       </p>
     </div>`;
+}
 
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'width:210mm; padding:20mm; background:#fff; font-family:Arial,sans-serif; color:#000; box-sizing:border-box; position:fixed; left:0; top:0; visibility:hidden; pointer-events:none; z-index:-1;';
-  wrap.innerHTML = headerHtml + titleHtml + bodyHtml;
-  document.body.appendChild(wrap);
-
-  const name = (f.ukName || 'Zapros').replace(/[^a-zA-Zа-яА-Я0-9]/g, '_').slice(0, 30);
-  const filename = `Zayavlenie_UK_${name}_${new Date().toISOString().slice(0, 10)}.pdf`;
-
+function doHtml2Pdf(wrap, filename) {
   window.html2pdf()
     .set({
       margin: 0,
@@ -980,10 +967,52 @@ function downloadOrderPdf(order) {
     .from(wrap)
     .save()
     .then(() => wrap.remove())
-    .catch((e) => {
+    .catch(() => {
       wrap.remove();
       alert(state.lang === 'ru' ? 'Ошибка создания PDF' : 'PDF creation error');
     });
+}
+
+function downloadOrderPdf(order) {
+  const f = order?.data || state.constructorForm;
+  if (!f) return;
+  const ru = state.lang === 'ru';
+
+  const headerHtml = `
+    <div style="text-align:right; font-size:11pt; line-height:1.4; margin-bottom:14px;">
+      ${ru ? 'Руководителю' : 'To the head of'}<br>
+      ${escapeHtml(f.ukName || '___________')}<br>
+      ${escapeHtml(f.ukAddress || '___________')}<br>
+      <br>
+      ${ru ? 'От ' : 'From '}${escapeHtml(f.fullName || '___________')}<br>
+      ${ru ? 'Проживающего по адресу' : 'Residing at'}<br>
+      ${escapeHtml(f.address || '___________')}<br>
+      ${f.emailForReply ? (ru ? 'Тел./Email: ' : 'Tel/Email: ') + escapeHtml(f.emailForReply) : ''}
+    </div>`;
+  const titleHtml = `<div style="text-align:center; font-size:13pt; font-weight:bold; margin-bottom:14px;">${ru ? 'ЗАЯВЛЕНИЕ' : 'APPLICATION'}</div>`;
+  const bodyHtml = buildPdfDocumentHtml(f, ru);
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'width:210mm; padding:20mm; background:#fff; font-family:Arial,sans-serif; color:#000; box-sizing:border-box; position:fixed; left:-9999px; top:0;';
+  wrap.innerHTML = headerHtml + titleHtml + bodyHtml;
+  document.body.appendChild(wrap);
+
+  const name = (f.ukName || 'Zapros').replace(/[^a-zA-Zа-яА-Я0-9]/g, '_').slice(0, 30);
+  const filename = `Zayavlenie_UK_${name}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+  if (typeof window.html2pdf !== 'undefined') {
+    doHtml2Pdf(wrap, filename);
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  script.onload = () => doHtml2Pdf(wrap, filename);
+  script.onerror = () => {
+    wrap.remove();
+    alert(state.lang === 'ru' ? 'Не удалось загрузить библиотеку PDF' : 'Failed to load PDF library');
+  };
+  document.head.appendChild(script);
 }
 
 function openOrderModal(order) {
