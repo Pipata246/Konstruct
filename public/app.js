@@ -1103,7 +1103,7 @@ async function saveDraft() {
 }
 
 function showPaymentModal() {
-  const t = I18N[state.lang].form;
+  const t = I18N[state.lang].constructor;
   const letter = getLetterPreview();
   const overlay = document.createElement('div');
   overlay.id = 'payment-modal-overlay';
@@ -1452,7 +1452,7 @@ function applyPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
   const payment = params.get('payment');
   if (!payment) return;
-  const t = I18N[state.lang].form;
+  const t = I18N[state.lang].constructor;
   const msg = payment === 'success' ? t.paymentSuccess : t.paymentCancel;
   window.history.replaceState(null, '', window.location.pathname + '#profile');
   window.location.hash = '#profile';
