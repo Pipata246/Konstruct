@@ -65,11 +65,11 @@ async function resolveUserId(req) {
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' });
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return res.status(500).json({ error: 'Server config error' });
 
   try {
@@ -99,6 +99,14 @@ module.exports = async function handler(req, res) {
       const { data: inserted, error } = await supabase.from('orders').insert(row).select().single();
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ order: inserted });
+    }
+
+    if (req.method === 'DELETE') {
+      const { id } = body;
+      if (!id) return res.status(400).json({ error: 'id обязателен' });
+      const { error } = await supabase.from('orders').delete().eq('id', id).eq('user_id', userId);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ ok: true });
     }
 
     return res.status(405).end();

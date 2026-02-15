@@ -210,6 +210,10 @@ async function createOrderApi(orderData) {
   return data.order;
 }
 
+async function deleteOrderFromApi(id) {
+  await ordersApi('DELETE', { id });
+}
+
 // ========== ORDERS (демо) ==========
 
 async function fetchOrders() {
@@ -507,6 +511,7 @@ const I18N = {
       ordersEmpty: "Нет заказов.",
       orderStatusNoReview: "Без проверки",
       orderOpen: "Открыть",
+      deleteOrder: "Удалить",
       orderPreview: "Предпросмотр",
       download: "Скачать",
       close: "Закрыть",
@@ -715,6 +720,7 @@ const I18N = {
       ordersEmpty: "No orders.",
       orderStatusNoReview: "Without review",
       orderOpen: "Open",
+      deleteOrder: "Delete",
       orderPreview: "Preview",
       download: "Download",
       close: "Close",
@@ -1453,7 +1459,10 @@ async function renderProfile() {
             <div style="font-weight:600;margin-bottom:4px">${formatOrderPreview(o)}</div>
             <div class="small muted-text">${t.orderStatusNoReview} · ${new Date(o.created_at).toLocaleDateString()}</div>
           </div>
-          <button class="secondary-btn order-open-btn" data-order-index="${i}">${t.orderOpen}</button>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="secondary-btn order-open-btn" data-order-index="${i}">${t.orderOpen}</button>
+            <button class="secondary-btn order-delete-btn" data-order-id="${o.id}" style="color:var(--danger, #c33)">${t.deleteOrder}</button>
+          </div>
         </div>
       `
         )
@@ -1465,8 +1474,22 @@ async function renderProfile() {
           if (o) openOrderModal(o);
         });
       });
+      ordersEl.querySelectorAll('.order-delete-btn').forEach((btn) => {
+        btn.addEventListener('click', () => deleteOrder(btn.getAttribute('data-order-id')));
+      });
     }
   }
+
+async function deleteOrder(id) {
+  if (!confirm(state.lang === 'ru' ? 'Удалить заказ?' : 'Delete order?')) return;
+  try {
+    await deleteOrderFromApi(id);
+    state.profileOrders = (state.profileOrders || []).filter((o) => o.id !== id);
+    render();
+  } catch (e) {
+    alert(state.lang === 'ru' ? 'Ошибка удаления' : 'Delete error');
+  }
+}
 
   const listEl = document.getElementById('profile-drafts-list');
   if (listEl) {
