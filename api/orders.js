@@ -102,7 +102,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      const { id } = body;
+      const id = body.id || query.id;
       if (!id) return res.status(400).json({ error: 'id обязателен' });
       const { error } = await supabase.from('orders').delete().eq('id', id).eq('user_id', userId);
       if (error) return res.status(500).json({ error: error.message });

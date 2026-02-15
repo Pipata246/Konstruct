@@ -211,13 +211,22 @@ async function createOrderApi(orderData) {
 }
 
 async function deleteOrderFromApi(id) {
-  await ordersApi('DELETE', { id });
-}
-
-// ========== ORDERS (демо) ==========
-
-async function fetchOrders() {
-  return state.documents || [];
+  const res = await fetch(API_BASE + '/api/orders?id=' + encodeURIComponent(id), {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(isInTelegramWebApp() && window.Telegram?.WebApp?.initData
+        ? {}
+        : state.token ? { 'Authorization': 'Bearer ' + state.token } : {}),
+    },
+    body: JSON.stringify(
+      isInTelegramWebApp() && window.Telegram?.WebApp?.initData
+        ? { id, initData: window.Telegram.WebApp.initData }
+        : { id }
+    ),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Ошибка запроса');
 }
 
 // ========== BLOG (демо) ==========
