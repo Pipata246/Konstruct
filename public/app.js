@@ -366,11 +366,36 @@ const I18N = {
     },
     legal: {
       offerTitle: "Публичная оферта",
-      offerBody:
-        "На этапе прототипа здесь размещается укороченный текст оферты. В финальной версии юрист подготовит полноценный документ, а разработчик просто подставит его в этот блок.",
+      offerBody: `
+<p><strong>1. Общие положения</strong></p>
+<p>Настоящая оферта является официальным предложением сервиса «Конструкт» (далее — Исполнитель) заключить договор на оказание услуг по формированию официальных запросов в управляющие компании по Федеральному закону № 402-ФЗ «О бухгалтерском учёте».</p>
+<p><strong>2. Предмет договора</strong></p>
+<p>Исполнитель оказывает Пользователю услуги по формированию текста запроса в УК, подготовке черновика в формате PDF и (при выборе соответствующего тарифа) проверке документа экспертом.</p>
+<p><strong>3. Порядок оказания услуг</strong></p>
+<p>Пользователь заполняет форму конструктора на сайте, указывая данные о себе, управляющей компании и периоде. Сервис формирует текст запроса и черновик PDF. При оплате тарифа с проверкой эксперта документ направляется на юридическую проверку.</p>
+<p><strong>4. Стоимость и оплата</strong></p>
+<p>Стоимость услуг указана на сайте: базовый тариф — 700 ₽, тариф с проверкой эксперта — 2 200 ₽. Оплата производится в соответствии с выбранным тарифом.</p>
+<p><strong>5. Контакты</strong></p>
+<p>По вопросам оферты и услуг: <a href="mailto:support@konstruct.app">support@konstruct.app</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+`,
       privacyTitle: "Политика конфиденциальности",
-      privacyBody:
-        "Описывает, как обрабатываются персональные данные пользователей сервиса. Сейчас это заглушка, чтобы показать наличие раздела и ссылок в футере.",
+      privacyBody: `
+<p><strong>1. Общие сведения</strong></p>
+<p>Сервис «Конструкт» соблюдает требования Федерального закона № 152-ФЗ «О персональных данных» и обеспечивает защиту персональных данных Пользователей.</p>
+<p><strong>2. Какие данные мы собираем</strong></p>
+<p>— Идентификатор Telegram (при входе через Mini App или по коду);<br/>
+— Имя, фамилия, имя пользователя в Telegram;<br/>
+— Фото профиля Telegram (опционально);<br/>
+— Данные, вводимые в конструктор: ФИО, адрес, название и адрес УК, период, email для ответа.</p>
+<p><strong>3. Цели обработки</strong></p>
+<p>Данные используются для формирования запроса, оказания услуг, связи с Пользователем и улучшения сервиса.</p>
+<p><strong>4. Хранение и передача</strong></p>
+<p>Данные хранятся на защищённых серверах. Передача третьим лицам — только в случаях, предусмотренных законом, или с согласия Пользователя.</p>
+<p><strong>5. Права Пользователя</strong></p>
+<p>Вы можете запросить доступ к своим данным, их исправление или удаление. Обращения: <a href="mailto:support@konstruct.app">support@konstruct.app</a> или <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+<p><strong>6. Cookies и технологии</strong></p>
+<p>Сервис может использовать локальное хранилище браузера для сохранения сессии и настроек.</p>
+`,
     },
     profile: {
       title: "Профиль",
@@ -523,11 +548,28 @@ const I18N = {
     },
     legal: {
       offerTitle: "Public offer",
-      offerBody:
-        "At the prototype stage we place a shortened offer text here. Later a lawyer will prepare a full document which will simply be inserted into this block.",
+      offerBody: `
+<p><strong>1. General</strong></p>
+<p>This offer is an official proposal of the Konstruct service to conclude an agreement for the preparation of official requests to management companies under Federal Law No. 402-FZ on accounting.</p>
+<p><strong>2. Services</strong></p>
+<p>The service helps form request text, prepare a draft PDF, and (on selected plans) provide expert review.</p>
+<p><strong>3. Pricing and payment</strong></p>
+<p>Pricing is shown on the website: base plan — 700 ₽, plan with expert review — 2 200 ₽.</p>
+<p><strong>4. Contact</strong></p>
+<p><a href="mailto:support@konstruct.app">support@konstruct.app</a>, Telegram: <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+`,
       privacyTitle: "Privacy policy",
-      privacyBody:
-        "Describes how users' personal data is processed. For now this is a placeholder to show that such a section and footer links exist.",
+      privacyBody: `
+<p><strong>1. Overview</strong></p>
+<p>Konstruct complies with applicable data protection laws and protects users' personal data.</p>
+<p><strong>2. Data we collect</strong></p>
+<p>— Telegram ID, name, username, profile photo;<br/>
+— Data entered in the constructor: full name, address, management company details, period, email.</p>
+<p><strong>3. Purpose</strong></p>
+<p>Data is used to provide the service, form requests, and communicate with you.</p>
+<p><strong>4. Your rights</strong></p>
+<p>You may request access, correction, or deletion of your data. Contact: <a href="mailto:support@konstruct.app">support@konstruct.app</a> or <a href="https://t.me/k0nstruct_bot" target="_blank" rel="noopener">@k0nstruct_bot</a>.</p>
+`,
     },
     alerts: {
       draftSaved: "Draft saved (locally in the page memory).",
@@ -959,19 +1001,19 @@ function renderHome() {
         </div>
       </section>
 
-      <section id="legal" class="section section-legal">
+      <section id="legal" class="section section-legal section-visible">
         <div class="cards-row">
           <article class="neo-card" id="legal-offer">
             <h3 class="price-title">${tLegal.offerTitle}</h3>
-            <p class="small muted-text">
+            <div class="legal-content small muted-text">
               ${tLegal.offerBody}
-            </p>
+            </div>
           </article>
           <article class="neo-card" id="legal-privacy">
             <h3 class="price-title">${tLegal.privacyTitle}</h3>
-            <p class="small muted-text">
+            <div class="legal-content small muted-text">
               ${tLegal.privacyBody}
-            </p>
+            </div>
           </article>
         </div>
       </section>
@@ -1527,6 +1569,10 @@ function initShell() {
 
   window.addEventListener("hashchange", () => {
     render();
+    const hash = window.location.hash;
+    if (hash === "#legal-offer" || hash === "#legal-privacy") {
+      setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
   });
 
   state.blogPosts = getDemoBlogPosts();

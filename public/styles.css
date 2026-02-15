@@ -1056,6 +1056,28 @@ html {
   margin: 4px 0 2px;
 }
 
+.legal-content {
+  line-height: 1.6;
+}
+
+.legal-content p {
+  margin: 0 0 10px;
+}
+
+.legal-content p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-content a:hover {
+  color: var(--accent-dark, #6d28d9);
+}
+
 .price-list {
   margin: 6px 0 8px;
   padding-left: 18px;
