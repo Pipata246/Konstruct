@@ -978,19 +978,32 @@ function renderHome() {
     </div>
   `;
 
-  // Обработчики конструктора
+  // Обработчики конструктора — делегирование на форму для надёжной работы в TMA
   const form = document.getElementById("constructor-form");
   if (form) {
-    const bindField = (name) => {
-      const el = form.elements?.[name] || form.querySelector(`[name="${name}"]`);
-      if (el) el.addEventListener("input", (e) => updateConstructorField(name, e.target.value));
+    const textFields = ["fullName", "address", "ukName", "ukAddress", "period", "emailForReply"];
+    const handleInput = (e) => {
+      const el = e.target;
+      const name = el?.getAttribute?.("name");
+      if (name && textFields.includes(name)) {
+        updateConstructorField(name, el.value);
+      }
     };
-    ["fullName", "address", "ukName", "ukAddress", "period", "emailForReply"].forEach(bindField);
-
-    form.querySelectorAll("input[data-service]").forEach((input) => {
-      input.addEventListener("change", (e) =>
-        toggleService(e.target.getAttribute("data-service"))
-      );
+    const handleChange = (e) => {
+      const el = e.target;
+      const service = el?.getAttribute?.("data-service");
+      if (service) toggleService(service);
+    };
+    form.addEventListener("input", handleInput);
+    form.addEventListener("keyup", handleInput);
+    form.addEventListener("change", (e) => {
+      const el = e.target;
+      const name = el?.getAttribute?.("name");
+      if (name && textFields.includes(name)) {
+        updateConstructorField(name, el.value);
+      } else {
+        handleChange(e);
+      }
     });
   }
 
