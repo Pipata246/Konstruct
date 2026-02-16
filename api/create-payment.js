@@ -113,15 +113,19 @@ module.exports = async function handler(req, res) {
 
     const customerEmail = orderData.emailForReply && String(orderData.emailForReply).trim();
     if (!customerEmail) {
-      return res.status(400).json({ error: 'Укажите email для отправки чека (поле «Email для ответа») или для связи)' });
+      return res.status(400).json({ error: 'Укажите email для отправки чека (поле «Email для ответа»).' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerEmail)) {
+      return res.status(400).json({ error: 'Укажите корректный email для чека (например example@mail.ru).' });
     }
 
     const receipt = {
       customer: { email: customerEmail },
       items: [
         {
-          description: withExpert ? 'Запрос в УК с проверкой эксперта (ст. 165 ЖК РФ)' : 'Запрос в УК (ст. 165 ЖК РФ)',
-          quantity: '1.00',
+          description: withExpert ? 'Запрос в УК с проверкой эксперта' : 'Запрос в УК ст. 165 ЖК РФ',
+          quantity: '1',
           amount: { value: valueStr, currency: 'RUB' },
           vat_code: 1,
           payment_subject: 'service',
