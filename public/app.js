@@ -21,10 +21,13 @@ const state = {
     emailForReply: "",
     extraInfo: "",
     services: {
-      content: true,
+      coldWater: true,
+      hotWater: false,
+      wastewater: false,
+      electricity: false,
+      gas: false,
       heating: false,
-      water: false,
-      repair: false,
+      solidWaste: false,
     },
   },
   withExpert: false,
@@ -555,12 +558,15 @@ const I18N = {
       ukAddressPlaceholder: "г. Москва, ул. Управляющая, д. 10",
       period: "Период начислений",
       periodPlaceholder: "Например: с 01.01.2025 по 31.03.2025",
-      services: "Услуги (отметьте нужные для п. 2)",
+      services: "Услуги (отметьте нужные для п. 2, ПП РФ № 354)",
       servicesOptions: {
-        content: "Содержание и коммунальные услуги",
+        coldWater: "Холодное водоснабжение",
+        hotWater: "Горячее водоснабжение",
+        wastewater: "Водоотведение",
+        electricity: "Электроснабжение",
+        gas: "Газоснабжение",
         heating: "Отопление",
-        water: "Водоснабжение",
-        repair: "Ремонт общедомового имущества",
+        solidWaste: "Обращение с твердыми коммунальными отходами",
       },
       email: "Email для ответа",
       emailPlaceholder: "example@mail.ru",
@@ -853,12 +859,15 @@ const I18N = {
       ukAddressPlaceholder: "Moscow, Management st. 10",
       period: "Billing period",
       periodPlaceholder: "e.g. 01.01.2025 – 31.03.2025",
-      services: "Services (for section 2)",
+      services: "Services (for section 2, RF Gov. Decree No. 354)",
       servicesOptions: {
-        content: "Housing and communal services",
+        coldWater: "Cold water supply",
+        hotWater: "Hot water supply",
+        wastewater: "Wastewater (water disposal)",
+        electricity: "Electricity supply",
+        gas: "Gas supply",
         heating: "Heating",
-        water: "Water supply",
-        repair: "Common property repairs",
+        solidWaste: "Solid municipal waste management",
       },
       email: "Email for reply",
       emailPlaceholder: "example@mail.com",
@@ -1061,7 +1070,7 @@ function clearConstructorForm() {
     period: "",
     emailForReply: "",
     extraInfo: "",
-    services: { content: true, heating: false, water: false, repair: false },
+    services: { coldWater: true, hotWater: false, wastewater: false, electricity: false, gas: false, heating: false, solidWaste: false },
   };
   state.withExpert = false;
   state.editingDraftId = null;
@@ -1185,10 +1194,13 @@ function getRequestDocParts(f, lang) {
     .filter(([, v]) => v)
     .map(([k]) => {
       switch (k) {
-        case "content": return ru ? "содержание и ремонт жилья" : "housing maintenance";
+        case "coldWater": return ru ? "холодное водоснабжение" : "cold water supply";
+        case "hotWater": return ru ? "горячее водоснабжение" : "hot water supply";
+        case "wastewater": return ru ? "водоотведение" : "wastewater (water disposal)";
+        case "electricity": return ru ? "электроснабжение" : "electricity supply";
+        case "gas": return ru ? "газоснабжение" : "gas supply";
         case "heating": return ru ? "отопление" : "heating";
-        case "water": return ru ? "водоснабжение" : "water supply";
-        case "repair": return ru ? "ремонт общедомового имущества" : "common property repair";
+        case "solidWaste": return ru ? "обращение с твердыми коммунальными отходами" : "solid municipal waste management";
         default: return "";
       }
     })
@@ -1660,10 +1672,13 @@ function renderHome() {
               <div class="field">
                 <div class="stacked-label">${tForm.services}</div>
                 <div class="checkbox-row">
-                  ${renderServiceCheckbox("content", tForm.servicesOptions.content)}
+                  ${renderServiceCheckbox("coldWater", tForm.servicesOptions.coldWater)}
+                  ${renderServiceCheckbox("hotWater", tForm.servicesOptions.hotWater)}
+                  ${renderServiceCheckbox("wastewater", tForm.servicesOptions.wastewater)}
+                  ${renderServiceCheckbox("electricity", tForm.servicesOptions.electricity)}
+                  ${renderServiceCheckbox("gas", tForm.servicesOptions.gas)}
                   ${renderServiceCheckbox("heating", tForm.servicesOptions.heating)}
-                  ${renderServiceCheckbox("water", tForm.servicesOptions.water)}
-                  ${renderServiceCheckbox("repair", tForm.servicesOptions.repair)}
+                  ${renderServiceCheckbox("solidWaste", tForm.servicesOptions.solidWaste)}
                 </div>
               </div>
               <div class="field">
@@ -1904,7 +1919,7 @@ function loadOrderIntoConstructor(order) {
     period: d.period || '',
     emailForReply: d.emailForReply || '',
     extraInfo: d.extraInfo || '',
-    services: d.services || { content: true, heating: false, water: false, repair: false },
+    services: d.services || { coldWater: true, hotWater: false, wastewater: false, electricity: false, gas: false, heating: false, solidWaste: false },
   };
   state.withExpert = !!d.withExpert;
   window.location.hash = '#constructor';
@@ -1928,7 +1943,7 @@ function loadDraftIntoConstructor(draft) {
     period: d.period || '',
     emailForReply: d.emailForReply || '',
     extraInfo: d.extraInfo || '',
-    services: d.services || { content: true, heating: false, water: false, repair: false },
+    services: d.services || { coldWater: true, hotWater: false, wastewater: false, electricity: false, gas: false, heating: false, solidWaste: false },
   };
   state.withExpert = !!d.withExpert;
   window.location.hash = '#constructor';
