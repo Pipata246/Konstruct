@@ -111,9 +111,9 @@ module.exports = async function handler(req, res) {
     const idempotenceKey = crypto.randomUUID();
     const auth = Buffer.from(`${YOOKASSA_SHOP_ID}:${YOOKASSA_SECRET_KEY}`).toString('base64');
 
-    const customerEmail = orderData.emailForReply && String(orderData.emailForReply).trim();
+    const customerEmail = body.receiptEmail && String(body.receiptEmail).trim();
     if (!customerEmail) {
-      return res.status(400).json({ error: 'Укажите email для отправки чека (поле «Email для ответа»).' });
+      return res.status(400).json({ error: 'Укажите email для чека в модальном окне перед оплатой.' });
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customerEmail)) {

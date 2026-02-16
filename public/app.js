@@ -248,9 +248,9 @@ async function createOrderApi(orderData) {
   return data.order;
 }
 
-async function createPaymentApi(orderData, withExpert) {
+async function createPaymentApi(orderData, withExpert, receiptEmail) {
   const headers = { 'Content-Type': 'application/json' };
-  const payload = { orderData: { ...orderData, withExpert }, withExpert };
+  const payload = { orderData: { ...orderData, withExpert }, withExpert, receiptEmail };
   if (isInTelegramWebApp() && window.Telegram?.WebApp?.initData) {
     payload.initData = window.Telegram.WebApp.initData;
   } else if (state.token) {
@@ -582,6 +582,8 @@ const I18N = {
         "Предпросмотр обновляется при каждом изменении полей. В реальном продукте на этом шаге будет PDF‑просмотрщик.",
       payModalTitle: "Проверьте данные перед оплатой",
       checkDataBeforePay: "Проверьте внесённые данные перед оплатой.",
+      receiptEmailLabel: "Email для чека (обязательно)",
+      receiptEmailPlaceholder: "example@mail.ru",
       pay: "Оплатить",
       cancel: "Отмена",
       paymentSuccess: "Оплата прошла. Заказ создан.",
@@ -883,6 +885,8 @@ const I18N = {
         "The preview updates on every change. In production this will be a PDF viewer.",
       payModalTitle: "Check your details before payment",
       checkDataBeforePay: "Please check the entered data before payment.",
+      receiptEmailLabel: "Email for receipt (required)",
+      receiptEmailPlaceholder: "example@mail.com",
       pay: "Pay",
       cancel: "Cancel",
       paymentSuccess: "Payment successful. Order created.",
@@ -1125,6 +1129,8 @@ function showPaymentModal() {
     <div class="preview-letter" style="background:#f5f5f5;padding:12px;border-radius:8px;margin-bottom:16px;max-height:240px;overflow:auto;">
       <pre style="white-space:pre-wrap;font-family:system-ui,sans-serif;font-size:13px;margin:0">${escapeHtml(letter)}</pre>
     </div>
+    <div class="stacked-label" style="margin-bottom:6px">${t.receiptEmailLabel}</div>
+    <input type="email" id="payment-modal-receipt-email" class="input" placeholder="${t.receiptEmailPlaceholder}" required style="width:100%;margin-bottom:16px;box-sizing:border-box;">
     <div class="btn-row" style="gap:8px;flex-wrap:wrap;">
       <button type="button" class="secondary-btn" id="payment-modal-cancel">${t.cancel}</button>
       <button type="button" class="primary-btn" id="payment-modal-pay">${t.pay}</button>
@@ -1143,12 +1149,25 @@ function showPaymentModal() {
   box.querySelector('#payment-modal-cancel').addEventListener('click', closeModal);
 
   box.querySelector('#payment-modal-pay').addEventListener('click', async () => {
+    const emailInput = box.querySelector('#payment-modal-receipt-email');
+    const receiptEmail = emailInput?.value?.trim() || '';
+    if (!receiptEmail) {
+      alert(state.lang === 'ru' ? 'Укажите email для чека.' : 'Enter email for receipt.');
+      emailInput?.focus();
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(receiptEmail)) {
+      alert(state.lang === 'ru' ? 'Укажите корректный email (например example@mail.ru).' : 'Enter a valid email (e.g. example@mail.com).');
+      emailInput?.focus();
+      return;
+    }
     const orderData = { ...state.constructorForm, withExpert: state.withExpert };
     const payBtn = box.querySelector('#payment-modal-pay');
     payBtn.disabled = true;
     payBtn.textContent = state.lang === 'ru' ? 'Перенаправление…' : 'Redirecting…';
     try {
-      const data = await createPaymentApi(orderData, state.withExpert);
+      const data = await createPaymentApi(orderData, state.withExpert, receiptEmail);
       if (data.confirmation_url) {
         window.location.href = data.confirmation_url;
         return;
