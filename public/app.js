@@ -273,6 +273,26 @@ async function updateOrderInApi(id, orderData) {
   return data.order;
 }
 
+async function syncPaymentApi() {
+  const headers = { 'Content-Type': 'application/json' };
+  const payload = {};
+  if (isInTelegramWebApp() && window.Telegram?.WebApp?.initData) {
+    payload.initData = window.Telegram.WebApp.initData;
+  } else if (state.token) {
+    headers['Authorization'] = 'Bearer ' + state.token;
+  } else {
+    throw new Error('Необходима авторизация');
+  }
+  const res = await fetch(API_BASE + '/api/sync-payment', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Ошибка синхронизации');
+  return data;
+}
+
 async function adminOrdersApi(method, body = {}) {
   const headers = { 'Content-Type': 'application/json' };
   let url = API_BASE + '/api/admin-orders';
@@ -1477,7 +1497,7 @@ function formatOrderPreview(order) {
   return [uk, period].filter(Boolean).join(' · ') || (state.lang === 'ru' ? 'Заказ' : 'Order');
 }
 
-function applyPaymentReturn() {
+async function applyPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
   const payment = params.get('payment');
   if (!payment) return;
@@ -1485,12 +1505,15 @@ function applyPaymentReturn() {
   const msg = payment === 'success' ? t.paymentSuccess : t.paymentCancel;
   window.history.replaceState(null, '', window.location.pathname + '#profile');
   window.location.hash = '#profile';
-  fetchOrders().then((orders) => {
-    state.profileOrders = orders || [];
-  }).catch(() => {}).finally(() => {
-    alert(msg);
-    render();
-  });
+  try {
+    if (payment === 'success') {
+      await syncPaymentApi();
+    }
+  } catch (_) {}
+  const orders = await fetchOrders().catch(() => []);
+  state.profileOrders = orders || [];
+  alert(msg);
+  render();
 }
 
 function render() {
