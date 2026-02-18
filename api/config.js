@@ -11,12 +11,13 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=300');
 
   let templates = [];
+  let variables = [];
   if (SUPABASE_URL && SUPABASE_ANON_KEY) {
     try {
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const { data } = await supabase
         .from('templates')
-        .select('id, name, description, title_ru, title_en, body_ru, body_en, sort_order, is_active')
+        .select('id, name, description, header_ru, header_en, title_ru, title_en, body_ru, body_en, sort_order, is_active')
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
@@ -27,12 +28,28 @@ module.exports = async function handler(req, res) {
         sort_order: row.sort_order ?? 0,
         is_active: row.is_active !== false,
         content: {
+          header: { ru: row.header_ru || '', en: row.header_en || '' },
           title: { ru: row.title_ru || '', en: row.title_en || '' },
           body: { ru: row.body_ru || '', en: row.body_en || '' },
         },
       }));
+
+      const { data: varsData } = await supabase
+        .from('template_variables')
+        .select('id, key, label_ru, label_en, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+      variables = (varsData || []).map((v) => ({
+        id: v.id,
+        key: v.key,
+        label_ru: v.label_ru || '',
+        label_en: v.label_en || '',
+        sort_order: v.sort_order ?? 0,
+      }));
     } catch {
       templates = [];
+      variables = [];
     }
   }
 
@@ -40,5 +57,6 @@ module.exports = async function handler(req, res) {
     supabaseUrl: SUPABASE_URL,
     supabaseAnonKey: SUPABASE_ANON_KEY,
     templates,
+    variables,
   });
 };

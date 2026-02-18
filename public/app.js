@@ -44,6 +44,7 @@ const state = {
   draft: null,
   blogPosts: [],
   templates: [],
+  templateVariables: [], // справочник переменных из БД (template_variables)
   constructorForm: {
     templateId: "",
     fields: {}, // значения полей по ключу переменной (key → value); список ключей задаётся шаблоном
@@ -55,6 +56,7 @@ const state = {
       gas: false,
       heating: false,
       solidWaste: false,
+      // старые ключи (templateVariablesLabel/addField/customField) больше не используем — переменные теперь управляются через таблицу template_variables
     },
   },
   withExpert: false,
@@ -78,19 +80,29 @@ function isInTelegramWebApp() {
 }
 
 async function fetchConfig() {
-  const r = await fetch(API_BASE + '/api/config');
+  // cache-bust, чтобы после админских изменений переменных/шаблонов обновлялось сразу
+  const r = await fetch(API_BASE + '/api/config?t=' + Date.now());
   return r.json();
+}
+
+function setTemplateVariables(list) {
+  state.templateVariables = Array.isArray(list) ? list : [];
 }
 
 function getTemplateVariables(tpl) {
   if (!tpl || !tpl.content) return [];
+  const header = tpl.content.header || {};
   const title = tpl.content.title || {};
   const body = tpl.content.body || {};
 
   const chunks = [];
   ['ru', 'en'].forEach((lng) => {
+    if (header[lng]) chunks.push(String(header[lng]));
     if (title[lng]) chunks.push(String(title[lng]));
     if (body[lng]) chunks.push(String(body[lng]));
+  });
+  Object.keys(header).forEach((k) => {
+    if (k !== 'ru' && k !== 'en' && header[k]) chunks.push(String(header[k]));
   });
   Object.keys(title).forEach((k) => {
     if (k !== 'ru' && k !== 'en' && title[k]) chunks.push(String(title[k]));
@@ -112,41 +124,33 @@ function getTemplateVariables(tpl) {
   if (!keys.length) return [];
 
   const vars = keys.map((key) => {
+    const dict = (state.templateVariables || []).find((v) => v.key === key);
     const def = PREDEFINED_VARIABLES.find((v) => v.key === key);
     return {
       key,
-      label: def ? (state.lang === 'ru' ? def.labelRu : def.labelEn) : key,
+      label: dict
+        ? (state.lang === 'ru' ? (dict.label_ru || key) : (dict.label_en || key))
+        : (def ? (state.lang === 'ru' ? def.labelRu : def.labelEn) : key),
     };
   });
 
-  // Сортировка по порядку из PREDEFINED_VARIABLES, остальные — по алфавиту
+  // Сортировка по справочнику переменных из БД (sort_order), остальные — по алфавиту
   vars.sort((a, b) => {
-    const ia = PREDEFINED_VARIABLES.findIndex((v) => v.key === a.key);
-    const ib = PREDEFINED_VARIABLES.findIndex((v) => v.key === b.key);
-    if (ia === -1 && ib === -1) return a.key.localeCompare(b.key);
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
+    const da = (state.templateVariables || []).find((v) => v.key === a.key);
+    const db = (state.templateVariables || []).find((v) => v.key === b.key);
+    const ia = da ? (da.sort_order ?? 0) : null;
+    const ib = db ? (db.sort_order ?? 0) : null;
+    if (ia == null && ib == null) return a.key.localeCompare(b.key);
+    if (ia == null) return 1;
+    if (ib == null) return -1;
+    if (ia !== ib) return ia - ib;
+    return a.key.localeCompare(b.key);
   });
 
   return vars;
 }
 
 function getBuiltInTemplates() {
-  const defaultVars = [
-    { key: 'fullName', label: 'ФИО полностью' },
-    { key: 'address', label: 'Адрес регистрации и фактического проживания' },
-    { key: 'passportSeries', label: 'Паспорт: серия' },
-    { key: 'passportNumber', label: 'Паспорт: номер' },
-    { key: 'passportIssued', label: 'Паспорт: кем и когда выдан' },
-    { key: 'phone', label: 'Контактный телефон' },
-    { key: 'ukName', label: 'Кому (название УК / ФИО директора)' },
-    { key: 'ukAddress', label: 'Адрес УК' },
-    { key: 'period', label: 'Период начислений' },
-    { key: 'accountNumber', label: 'Номер лицевого счёта (необязательно)' },
-    { key: 'emailForReply', label: 'Email для ответа' },
-    { key: 'extraInfo', label: 'Иная информация (необязательно)' },
-  ];
   return [
     {
       id: 'builtin-402',
@@ -154,9 +158,12 @@ function getBuiltInTemplates() {
       description: 'Встроенный шаблон (fallback).',
       sort_order: 0,
       is_active: true,
-      variables: defaultVars,
       content: {
         version: 1,
+        header: {
+          ru: "Кому: {{ukName}}\nОт: {{fullName}}\nПаспорт: серия {{passportSeries}} номер {{passportNumber}}, выдан {{passportIssued}}\nАдрес регистрации: {{address}}\nКонтактный телефон: {{phone}}  Email: {{emailForReply}}",
+          en: "To: {{ukName}}\nFrom: {{fullName}}\nPassport: series {{passportSeries}} no. {{passportNumber}}, issued {{passportIssued}}\nAddress: {{address}}\nPhone: {{phone}}  Email: {{emailForReply}}",
+        },
         title: {
           ru: "ЗАПРОС\nо предоставлении документов, послуживших основанием для начисления платы за жилищно-коммунальные услуги\n(в соответствии с Федеральным законом № 402-ФЗ)",
           en: "REQUEST\nfor documents forming the basis for housing and коммунal service charges\n(pursuant to Federal Law No. 402-FZ)",
@@ -198,6 +205,7 @@ function getBuiltInTemplates() {
             "Signature ____________ / {{fullName}}",
         },
       },
+      // legacy keys kept for compatibility
     },
   ];
 }
@@ -229,8 +237,10 @@ async function initAppConfig() {
   try {
     const cfg = await fetchConfig();
     setTemplates(cfg?.templates);
+    setTemplateVariables(cfg?.variables);
   } catch {
     setTemplates([]);
+    setTemplateVariables([]);
   }
 }
 
@@ -516,6 +526,21 @@ async function fetchAdminOrders() {
 async function fetchAdminTemplates() {
   const data = await adminOrdersApi('GET', { resource: 'templates' });
   return data.templates || [];
+}
+
+async function fetchAdminVariables() {
+  const data = await adminOrdersApi('GET', { resource: 'variables' });
+  return data.variables || [];
+}
+
+async function createAdminVariable(variable) {
+  const data = await adminOrdersApi('POST', { resource: 'variables', variable });
+  return data.variable;
+}
+
+async function deleteAdminVariable(id) {
+  const data = await adminOrdersApi('DELETE', { resource: 'variables', id });
+  return data;
 }
 
 async function createAdminTemplate(tpl) {
@@ -999,11 +1024,6 @@ const I18N = {
       templateBodyEn: "Текст (EN)",
       templateCancel: "Отмена",
       templateSave: "Сохранить шаблон",
-      templateVariablesLabel: "Поля для ввода пользователя (только они появятся в форме)",
-      addField: "Добавить поле",
-      customField: "Своё поле…",
-      variableKeyPlaceholder: "ключ (латиница, например: ooo)",
-      variableLabelPlaceholder: "подпись (например: ООО)",
     },
     profile: {
       title: "Профиль",
@@ -1284,11 +1304,6 @@ const I18N = {
       templateBodyEn: "Body (EN)",
       templateCancel: "Cancel",
       templateSave: "Save template",
-      templateVariablesLabel: "User input fields (only these will appear in the form)",
-      addField: "Add field",
-      customField: "Custom field…",
-      variableKeyPlaceholder: "key (e.g. ooo)",
-      variableLabelPlaceholder: "label (e.g. LLC)",
     },
     profile: {
       title: "Profile",
@@ -1536,21 +1551,25 @@ function getLetterPreviewFromData(f) {
     vars[v.key] = s || (v.key === 'extraInfo' ? '' : '___________');
   });
 
+  const headerRaw = (tpl?.content?.header && (tpl.content.header[lang] || tpl.content.header[ru ? 'ru' : 'en'] || tpl.content.header.ru || tpl.content.header.en)) || '';
   const titleRaw = (tpl?.content?.title && (tpl.content.title[lang] || tpl.content.title[ru ? 'ru' : 'en'] || tpl.content.title.ru || tpl.content.title.en)) || '';
   const bodyRaw = (tpl?.content?.body && (tpl.content.body[lang] || tpl.content.body[ru ? 'ru' : 'en'] || tpl.content.body.ru || tpl.content.body.en)) || '';
   const title = fillPlaceholders(titleRaw, vars);
 
-  const ukName = vars.ukName ?? '___________';
-  const fullName = vars.fullName ?? '___________';
-  const passportSeries = vars.passportSeries ?? '____';
-  const passportNumber = vars.passportNumber ?? '______';
-  const passportIssued = vars.passportIssued ?? '___________';
-  const address = vars.address ?? '___________';
-  const phone = vars.phone ?? '___________';
-  const emailForReply = vars.emailForReply ?? '___________';
-  const header = ru
-    ? `Кому: ${ukName}\nОт: ${fullName}\nПаспорт: серия ${passportSeries} номер ${passportNumber}, выдан ${passportIssued}\nАдрес регистрации: ${address}\nКонтактный телефон: ${phone}  Email: ${emailForReply}`
-    : `To: ${ukName}\nFrom: ${fullName}\nPassport: series ${passportSeries} no. ${passportNumber}, issued ${passportIssued}\nAddress: ${address}\nPhone: ${phone}  Email: ${emailForReply}`;
+  const fallbackHeader = (() => {
+    const ukName = vars.ukName ?? '___________';
+    const fullName = vars.fullName ?? '___________';
+    const passportSeries = vars.passportSeries ?? '____';
+    const passportNumber = vars.passportNumber ?? '______';
+    const passportIssued = vars.passportIssued ?? '___________';
+    const address = vars.address ?? '___________';
+    const phone = vars.phone ?? '___________';
+    const emailForReply = vars.emailForReply ?? '___________';
+    return ru
+      ? `Кому: ${ukName}\nОт: ${fullName}\nПаспорт: серия ${passportSeries} номер ${passportNumber}, выдан ${passportIssued}\nАдрес регистрации: ${address}\nКонтактный телефон: ${phone}  Email: ${emailForReply}`
+      : `To: ${ukName}\nFrom: ${fullName}\nPassport: series ${passportSeries} no. ${passportNumber}, issued ${passportIssued}\nAddress: ${address}\nPhone: ${phone}  Email: ${emailForReply}`;
+  })();
+  const header = headerRaw ? fillPlaceholders(headerRaw, vars) : fallbackHeader;
 
   const body = fillPlaceholders(bodyRaw, vars);
 
@@ -1601,30 +1620,27 @@ function buildPdfDocumentHtml(f, ru) {
     vars[v.key] = s || (v.key === 'extraInfo' ? '' : '___________');
   });
 
+  const headerRaw = (tpl?.content?.header && (tpl.content.header[lang] || tpl.content.header.ru || tpl.content.header.en)) || '';
   const titleRaw = (tpl?.content?.title && (tpl.content.title[lang] || tpl.content.title.ru || tpl.content.title.en)) || '';
   const bodyRaw = (tpl?.content?.body && (tpl.content.body[lang] || tpl.content.body.ru || tpl.content.body.en)) || '';
   const titleText = fillPlaceholders(titleRaw, vars);
   const bodyText = fillPlaceholders(bodyRaw, vars);
 
-  const ukName = vars.ukName ?? '___________';
-  const fullName = vars.fullName ?? '___________';
-  const passportSeries = vars.passportSeries ?? '____';
-  const passportNumber = vars.passportNumber ?? '______';
-  const passportIssued = vars.passportIssued ?? '___________';
-  const address = vars.address ?? '___________';
-  const phone = vars.phone ?? '___________';
-  const emailForReply = vars.emailForReply ?? '___________';
-  const headerBlock = ru
-    ? `<p style="margin:0 0 6px;"><strong>Кому:</strong> ${escapeHtml(ukName)}</p>
-<p style="margin:0 0 6px;"><strong>От:</strong> ${escapeHtml(fullName)}</p>
-<p style="margin:0 0 6px;"><strong>Паспорт:</strong> серия ${escapeHtml(passportSeries)} номер ${escapeHtml(passportNumber)}, выдан ${escapeHtml(passportIssued)}</p>
-<p style="margin:0 0 6px;"><strong>Адрес регистрации:</strong> ${escapeHtml(address)}</p>
-<p style="margin:0 0 0;"><strong>Контактный телефон:</strong> ${escapeHtml(phone)}  <strong>Email:</strong> ${escapeHtml(emailForReply)}</p>`
-    : `<p style="margin:0 0 6px;"><strong>To:</strong> ${escapeHtml(ukName)}</p>
-<p style="margin:0 0 6px;"><strong>From:</strong> ${escapeHtml(fullName)}</p>
-<p style="margin:0 0 6px;"><strong>Passport:</strong> series ${escapeHtml(passportSeries)} no. ${escapeHtml(passportNumber)}, issued ${escapeHtml(passportIssued)}</p>
-<p style="margin:0 0 6px;"><strong>Address:</strong> ${escapeHtml(address)}</p>
-<p style="margin:0 0 0;"><strong>Phone:</strong> ${escapeHtml(phone)}  <strong>Email:</strong> ${escapeHtml(emailForReply)}</p>`;
+  const fallbackHeaderText = (() => {
+    const ukName = vars.ukName ?? '___________';
+    const fullName = vars.fullName ?? '___________';
+    const passportSeries = vars.passportSeries ?? '____';
+    const passportNumber = vars.passportNumber ?? '______';
+    const passportIssued = vars.passportIssued ?? '___________';
+    const address = vars.address ?? '___________';
+    const phone = vars.phone ?? '___________';
+    const emailForReply = vars.emailForReply ?? '___________';
+    return ru
+      ? `Кому: ${ukName}\nОт: ${fullName}\nПаспорт: серия ${passportSeries} номер ${passportNumber}, выдан ${passportIssued}\nАдрес регистрации: ${address}\nКонтактный телефон: ${phone}  Email: ${emailForReply}`
+      : `To: ${ukName}\nFrom: ${fullName}\nPassport: series ${passportSeries} no. ${passportNumber}, issued ${passportIssued}\nAddress: ${address}\nPhone: ${phone}  Email: ${emailForReply}`;
+  })();
+  const headerText = headerRaw ? fillPlaceholders(headerRaw, vars) : fallbackHeaderText;
+  const headerBlock = `<p style="margin:0;white-space:pre-wrap;line-height:1.5;">${escapeHtml(headerText)}</p>`;
 
   function textToHtml(text) {
     const src = String(text || '').replace(/\r\n/g, '\n').trim();
@@ -2564,7 +2580,7 @@ function openTemplateEditorModal(existing) {
     description: '',
     is_active: true,
     sort_order: 0,
-    content: { version: 1, title: { ru: '', en: '' }, body: { ru: '', en: '' } },
+    content: { version: 1, header: { ru: '', en: '' }, title: { ru: '', en: '' }, body: { ru: '', en: '' } },
   };
 
   const overlay = document.createElement('div');
@@ -2573,6 +2589,8 @@ function openTemplateEditorModal(existing) {
   box.className = 'neo-card';
   box.style.cssText = 'max-width:720px;width:100%;max-height:90vh;overflow:auto;';
 
+  const headerRu = tpl.header_ru ?? tpl.content?.header?.ru ?? '';
+  const headerEn = tpl.header_en ?? tpl.content?.header?.en ?? '';
   const titleRu = tpl.title_ru ?? tpl.content?.title?.ru ?? '';
   const titleEn = tpl.title_en ?? tpl.content?.title?.en ?? '';
   const bodyRu = tpl.body_ru ?? tpl.content?.body?.ru ?? '';
@@ -2598,13 +2616,21 @@ function openTemplateEditorModal(existing) {
         <input class="input" id="tpl-sort" type="number" style="width:110px" value="${Number(tpl.sort_order || 0)}" />
       </div>
     </div>
-    <div class="field" id="tpl-variables-wrap">
-      <div class="stacked-label">${t.templateVariablesLabel}</div>
-      <div id="tpl-variables-list" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:36px;margin-bottom:8px"></div>
+    <div class="field">
+      <div class="stacked-label">${state.lang === 'ru' ? 'Переменные (справочник из БД)' : 'Variables (DB dictionary)'}</div>
+      <div id="tpl-var-palette" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:36px;margin-bottom:8px"></div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <button type="button" class="secondary-btn" id="tpl-add-field" style="width:36px;height:36px;border-radius:50%;padding:0;font-size:18px;line-height:1" title="${t.addField}">+</button>
-        <span class="small muted-text">${t.addField}</span>
+        <button type="button" class="secondary-btn" id="tpl-var-add" style="width:36px;height:36px;border-radius:50%;padding:0;font-size:18px;line-height:1" title="${state.lang === 'ru' ? 'Добавить переменную' : 'Add variable'}">+</button>
+        <span class="small muted-text">${state.lang === 'ru' ? 'Добавить переменную' : 'Add variable'}</span>
       </div>
+    </div>
+    <div class="field">
+      <div class="stacked-label">${state.lang === 'ru' ? 'Шапка (RU)' : 'Header (RU)'}</div>
+      <textarea class="textarea input" id="tpl-header-ru" rows="5" placeholder="${state.lang === 'ru' ? 'Например: Кому/От/Паспорт/Адрес… Можно использовать {{key}}' : 'Header text. Use {{key}} placeholders.'}">${escapeHtml(headerRu)}</textarea>
+    </div>
+    <div class="field">
+      <div class="stacked-label">${state.lang === 'ru' ? 'Шапка (EN)' : 'Header (EN)'}</div>
+      <textarea class="textarea input" id="tpl-header-en" rows="5" placeholder="...">${escapeHtml(headerEn)}</textarea>
     </div>
     <div class="field">
       <div class="stacked-label">${t.templateTitleRu}</div>
@@ -2632,68 +2658,10 @@ function openTemplateEditorModal(existing) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
-  const listEl = box.querySelector('#tpl-variables-list');
-  const variables = Array.isArray(tpl.variables) && tpl.variables.length ? tpl.variables : (tpl.id ? [] : PREDEFINED_VARIABLES.slice(0, 12).map((p) => ({ key: p.key, label: state.lang === 'ru' ? p.labelRu : p.labelEn })));
-
-  function getCurrentVariables() {
-    return Array.from(box.querySelectorAll('#tpl-variables-list .tpl-var-chip')).map((el) => ({
-      key: el.getAttribute('data-key') || '',
-      label: el.getAttribute('data-label') || '',
-    })).filter((v) => v.key);
-  }
-
-  variables.forEach((v) => {
-    const chip = document.createElement('span');
-    chip.className = 'tpl-var-chip';
-    chip.setAttribute('data-key', v.key);
-    chip.setAttribute('data-label', v.label);
-    chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:var(--bg-soft,#eee);padding:4px 8px;border-radius:6px;font-size:13px';
-    chip.innerHTML = `<span>${escapeHtml(v.label)}</span><button type="button" class="tpl-var-remove" aria-label="Удалить" style="background:none;border:none;cursor:pointer;padding:0;margin:0;color:#666;font-size:16px;line-height:1">&times;</button>`;
-    chip.querySelector('.tpl-var-remove').addEventListener('click', () => chip.remove());
-    listEl.appendChild(chip);
-  });
-
-  box.querySelector('#tpl-add-field').addEventListener('click', () => {
-    const current = getCurrentVariables();
-    const currentKeys = new Set(current.map((v) => v.key));
-    const predefined = PREDEFINED_VARIABLES.filter((p) => !currentKeys.has(p.key));
-    const choice = state.lang === 'ru'
-      ? (predefined.length ? confirm('Добавить из списка предустановленных? (Отмена — ввести своё поле)') : false)
-      : (predefined.length ? confirm('Add from predefined list? (Cancel — enter custom field)') : false);
-    if (choice && predefined.length) {
-      const labels = predefined.map((p, i) => `${i + 1}. ${state.lang === 'ru' ? p.labelRu : p.labelEn} (${p.key})`).join('\n');
-      const keyPrompt = state.lang === 'ru' ? 'Введите номер или ключ из списка:\n' + labels : 'Enter number or key from list:\n' + labels;
-      const raw = prompt(keyPrompt, predefined[0].key);
-      if (raw == null || raw === '') return;
-      const num = parseInt(raw.trim(), 10);
-      const picked = num >= 1 && num <= predefined.length ? predefined[num - 1] : predefined.find((p) => p.key === raw.trim());
-      if (picked) {
-        const chip = document.createElement('span');
-        chip.className = 'tpl-var-chip';
-        chip.setAttribute('data-key', picked.key);
-        chip.setAttribute('data-label', state.lang === 'ru' ? picked.labelRu : picked.labelEn);
-        chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:var(--bg-soft,#eee);padding:4px 8px;border-radius:6px;font-size:13px';
-        chip.innerHTML = `<span>${escapeHtml(state.lang === 'ru' ? picked.labelRu : picked.labelEn)}</span><button type="button" class="tpl-var-remove" aria-label="Удалить" style="background:none;border:none;cursor:pointer;padding:0;margin:0;color:#666;font-size:16px;line-height:1">&times;</button>`;
-        chip.querySelector('.tpl-var-remove').addEventListener('click', () => chip.remove());
-        listEl.appendChild(chip);
-      }
-    } else {
-      const keyPrompt = state.lang === 'ru' ? 'Ключ переменной (латиница, например ooo):' : 'Variable key (e.g. ooo):';
-      const key = prompt(keyPrompt, '');
-      if (key == null || key === '') return;
-      const safeKey = key.trim().replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase() || 'field';
-      const labelPrompt = state.lang === 'ru' ? 'Подпись поля (например: ООО):' : 'Field label (e.g. LLC):';
-      const label = prompt(labelPrompt, safeKey);
-      if (label == null) return;
-      const chip = document.createElement('span');
-      chip.className = 'tpl-var-chip';
-      chip.setAttribute('data-key', safeKey);
-      chip.setAttribute('data-label', (label || safeKey).trim());
-      chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:var(--bg-soft,#eee);padding:4px 8px;border-radius:6px;font-size:13px';
-      chip.innerHTML = `<span>${escapeHtml((label || safeKey).trim())}</span><button type="button" class="tpl-var-remove" aria-label="Удалить" style="background:none;border:none;cursor:pointer;padding:0;margin:0;color:#666;font-size:16px;line-height:1">&times;</button>`;
-      chip.querySelector('.tpl-var-remove').addEventListener('click', () => chip.remove());
-      listEl.appendChild(chip);
-    }
+  let activeTextareaId = 'tpl-body-ru';
+  ['tpl-header-ru', 'tpl-header-en', 'tpl-title-ru', 'tpl-title-en', 'tpl-body-ru', 'tpl-body-en'].forEach((id) => {
+    const el = box.querySelector('#' + id);
+    if (el) el.addEventListener('focus', () => { activeTextareaId = id; });
   });
 
   const close = () => overlay.remove();
@@ -2708,7 +2676,122 @@ function openTemplateEditorModal(existing) {
     ta.focus();
   }
 
-  const varButtons = PREDEFINED_VARIABLES.map((v) => ({ key: v.key, label: state.lang === 'ru' ? v.labelRu : v.labelEn }));
+  function getPaletteVars() {
+    const list = Array.isArray(state.templateVariables) && state.templateVariables.length
+      ? state.templateVariables
+      : PREDEFINED_VARIABLES.map((v) => ({ id: null, key: v.key, label_ru: v.labelRu, label_en: v.labelEn, sort_order: 0 }));
+    return list;
+  }
+
+  function renderPalette() {
+    const pal = box.querySelector('#tpl-var-palette');
+    if (!pal) return;
+    const vars = getPaletteVars();
+    pal.innerHTML = vars.map((v) => {
+      const label = state.lang === 'ru' ? (v.label_ru || v.key) : (v.label_en || v.key);
+      const del = v.id ? `<button type="button" class="tpl-dict-del" data-id="${escapeHtml(String(v.id))}" style="margin-left:6px;background:none;border:none;cursor:pointer;color:#666;font-size:16px;line-height:1;padding:0" aria-label="Удалить">&times;</button>` : '';
+      return `<span class="tpl-dict-pill" style="display:inline-flex;align-items:center;gap:0;background:var(--bg-soft,#eee);border-radius:999px;padding:6px 10px;font-size:13px">
+        <button type="button" class="tpl-dict-insert" data-key="${escapeHtml(String(v.key))}" style="background:none;border:none;cursor:pointer;padding:0;margin:0;font:inherit;color:inherit">${escapeHtml(label)}</button>
+        ${del}
+      </span>`;
+    }).join('');
+
+    pal.querySelectorAll('.tpl-dict-insert').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-key');
+        if (!key) return;
+        insertAtCursor(activeTextareaId, `{{${key}}}`);
+      });
+    });
+    pal.querySelectorAll('.tpl-dict-del').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        if (!confirm(state.lang === 'ru' ? 'Удалить переменную? Она исчезнет из списка, но в старых шаблонах {{key}} останется текстом.' : 'Delete variable?')) return;
+        try {
+          await deleteAdminVariable(id);
+          const vars = await fetchAdminVariables();
+          state.templateVariables = vars.filter((x) => x.is_active !== false).map((x) => ({
+            id: x.id, key: x.key, label_ru: x.label_ru || '', label_en: x.label_en || '', sort_order: x.sort_order ?? 0,
+          }));
+          renderPalette();
+        } catch (e) {
+          alert((state.lang === 'ru' ? 'Ошибка: ' : 'Error: ') + (e?.message || ''));
+        }
+      });
+    });
+  }
+
+  function openAddVariableModal() {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10002;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    const bx = document.createElement('div');
+    bx.className = 'neo-card';
+    bx.style.cssText = 'max-width:520px;width:100%;max-height:90vh;overflow:auto;';
+    bx.innerHTML = `
+      <h3 class="preview-title" style="margin-top:0">${state.lang === 'ru' ? 'Новая переменная' : 'New variable'}</h3>
+      <div class="field">
+        <div class="stacked-label">${state.lang === 'ru' ? 'Ключ (для {{key}})' : 'Key (for {{key}})'}</div>
+        <input class="input" id="var-key" placeholder="fullName" />
+      </div>
+      <div class="field">
+        <div class="stacked-label">${state.lang === 'ru' ? 'Подпись (RU)' : 'Label (RU)'}</div>
+        <input class="input" id="var-ru" placeholder="${state.lang === 'ru' ? 'ФИО полностью' : 'Full name (RU)'}" />
+      </div>
+      <div class="field">
+        <div class="stacked-label">${state.lang === 'ru' ? 'Подпись (EN)' : 'Label (EN)'}</div>
+        <input class="input" id="var-en" placeholder="Full name" />
+      </div>
+      <div class="field" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <label class="checkbox-pill" style="margin:0">
+          <input type="checkbox" id="var-active" checked />
+          ${state.lang === 'ru' ? 'Активна' : 'Active'}
+        </label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="stacked-label" style="margin:0">${state.lang === 'ru' ? 'Сортировка' : 'Sort order'}</div>
+          <input class="input" id="var-sort" type="number" style="width:110px" value="0" />
+        </div>
+      </div>
+      <div class="btn-row" style="gap:8px;flex-wrap:wrap;">
+        <button type="button" class="secondary-btn" id="var-cancel">${state.lang === 'ru' ? 'Отмена' : 'Cancel'}</button>
+        <button type="button" class="primary-btn" id="var-save">${state.lang === 'ru' ? 'Добавить' : 'Add'}</button>
+      </div>
+    `;
+    ov.appendChild(bx);
+    document.body.appendChild(ov);
+    const closeVar = () => ov.remove();
+    ov.addEventListener('click', (e) => { if (e.target === ov) closeVar(); });
+    bx.querySelector('#var-cancel').addEventListener('click', closeVar);
+    bx.querySelector('#var-save').addEventListener('click', async () => {
+      const key = (bx.querySelector('#var-key').value || '').trim();
+      if (!key) { alert(state.lang === 'ru' ? 'Укажите ключ' : 'Enter key'); return; }
+      try {
+        await createAdminVariable({
+          key,
+          label_ru: (bx.querySelector('#var-ru').value || '').trim(),
+          label_en: (bx.querySelector('#var-en').value || '').trim(),
+          is_active: bx.querySelector('#var-active').checked,
+          sort_order: parseInt(bx.querySelector('#var-sort').value || '0', 10) || 0,
+        });
+        const vars = await fetchAdminVariables();
+        state.templateVariables = vars.filter((x) => x.is_active !== false).map((x) => ({
+          id: x.id, key: x.key, label_ru: x.label_ru || '', label_en: x.label_en || '', sort_order: x.sort_order ?? 0,
+        }));
+        renderPalette();
+        closeVar();
+      } catch (e) {
+        alert((state.lang === 'ru' ? 'Ошибка: ' : 'Error: ') + (e?.message || ''));
+      }
+    });
+  }
+
+  const addBtn = box.querySelector('#tpl-var-add');
+  if (addBtn) addBtn.addEventListener('click', openAddVariableModal);
+
+  // первичная отрисовка палитры переменных
+  renderPalette();
+
+  const varButtons = getPaletteVars().map((v) => ({ key: v.key, label: state.lang === 'ru' ? (v.label_ru || v.key) : (v.label_en || v.key) }));
   const varBtnsHtml = varButtons.map((v) => `<button type="button" class="secondary-btn tpl-var-btn" data-var="{{${v.key}}}" data-target="tpl-body-ru" style="font-size:12px;padding:4px 8px">${escapeHtml(v.label)}</button>`).join('');
 
   const bodyRuWrap = box.querySelector('#tpl-body-ru')?.closest('.field');
@@ -2736,22 +2819,24 @@ function openTemplateEditorModal(existing) {
   }
 
   box.querySelector('#tpl-save').addEventListener('click', async () => {
+    const headerRu = box.querySelector('#tpl-header-ru').value || '';
+    const headerEn = box.querySelector('#tpl-header-en').value || '';
     const titleRu = box.querySelector('#tpl-title-ru').value || '';
     const titleEn = box.querySelector('#tpl-title-en').value || '';
     const bodyRu = box.querySelector('#tpl-body-ru').value || '';
     const bodyEn = box.querySelector('#tpl-body-en').value || '';
-    const variables = getCurrentVariables();
     const payload = {
       name: box.querySelector('#tpl-name').value.trim(),
       description: box.querySelector('#tpl-desc').value.trim(),
       is_active: box.querySelector('#tpl-active').checked,
       sort_order: parseInt(box.querySelector('#tpl-sort').value || '0', 10) || 0,
+      header_ru: headerRu,
+      header_en: headerEn,
       title_ru: titleRu,
       title_en: titleEn,
       body_ru: bodyRu,
       body_en: bodyEn,
-      variables,
-      content: { title: { ru: titleRu, en: titleEn }, body: { ru: bodyRu, en: bodyEn } },
+      content: { header: { ru: headerRu, en: headerEn }, title: { ru: titleRu, en: titleEn }, body: { ru: bodyRu, en: bodyEn } },
     };
     if (!payload.name) {
       alert(state.lang === 'ru' ? 'Укажите название шаблона' : 'Enter template name');

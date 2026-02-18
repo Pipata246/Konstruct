@@ -104,18 +104,78 @@ module.exports = async function handler(req, res) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!(await isAdmin(supabase, userId))) return res.status(403).json({ error: 'Доступ запрещён' });
 
-    // ===== Templates CRUD (таблица: name, description, title_ru, title_en, body_ru, body_en, is_active, sort_order) =====
+    // ===== Template variables CRUD (таблица: template_variables) =====
+    if (resource === 'variables') {
+      if (req.method === 'GET') {
+        const { data: rows, error } = await supabase
+          .from('template_variables')
+          .select('id, key, label_ru, label_en, is_active, sort_order, created_at, updated_at')
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: true });
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ variables: rows || [] });
+      }
+
+      if (req.method === 'POST') {
+        const v = body.variable || body;
+        const key = String(v.key || '').trim();
+        if (!key) return res.status(400).json({ error: 'key обязателен' });
+        const safeKey = key.replace(/[^a-zA-Z0-9_]/g, '_');
+        const row = {
+          key: safeKey,
+          label_ru: String(v.label_ru || '').trim(),
+          label_en: String(v.label_en || '').trim(),
+          is_active: v.is_active !== undefined ? !!v.is_active : true,
+          sort_order: parseInt(v.sort_order, 10) || 0,
+          updated_at: new Date().toISOString(),
+        };
+        const { data: created, error } = await supabase.from('template_variables').insert(row).select().single();
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ variable: created });
+      }
+
+      if (req.method === 'PUT') {
+        const id = body.id;
+        if (!id) return res.status(400).json({ error: 'id обязателен' });
+        const patch = body.variable || body;
+        const update = { updated_at: new Date().toISOString() };
+        if (patch.key !== undefined) update.key = String(patch.key || '').trim().replace(/[^a-zA-Z0-9_]/g, '_');
+        if (patch.label_ru !== undefined) update.label_ru = String(patch.label_ru || '').trim();
+        if (patch.label_en !== undefined) update.label_en = String(patch.label_en || '').trim();
+        if (patch.is_active !== undefined) update.is_active = !!patch.is_active;
+        if (patch.sort_order !== undefined) update.sort_order = parseInt(patch.sort_order, 10) || 0;
+        if (update.key !== undefined && !update.key) return res.status(400).json({ error: 'key не может быть пустым' });
+
+        const { data: updated, error } = await supabase.from('template_variables').update(update).eq('id', id).select().single();
+        if (error) return res.status(500).json({ error: error.message });
+        if (!updated) return res.status(404).json({ error: 'Переменная не найдена' });
+        return res.status(200).json({ variable: updated });
+      }
+
+      if (req.method === 'DELETE') {
+        const id = body.id || query.id;
+        if (!id) return res.status(400).json({ error: 'id обязателен' });
+        const { error } = await supabase.from('template_variables').delete().eq('id', id);
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ ok: true });
+      }
+
+      return res.status(405).end();
+    }
+
+    // ===== Templates CRUD (таблица: name, description, header_ru/en, title_ru/en, body_ru/en, is_active, sort_order) =====
     if (resource === 'templates') {
       if (req.method === 'GET') {
         const { data: rows, error } = await supabase
           .from('templates')
-          .select('id, name, description, title_ru, title_en, body_ru, body_en, is_active, sort_order, created_at, updated_at')
+          .select('id, name, description, header_ru, header_en, title_ru, title_en, body_ru, body_en, is_active, sort_order, created_at, updated_at')
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: true });
         if (error) return res.status(500).json({ error: error.message });
         const templates = (rows || []).map((row) => ({
           ...row,
           content: {
+            header: { ru: row.header_ru || '', en: row.header_en || '' },
             title: { ru: row.title_ru || '', en: row.title_en || '' },
             body: { ru: row.body_ru || '', en: row.body_en || '' },
           },
@@ -130,6 +190,8 @@ module.exports = async function handler(req, res) {
         const row = {
           name,
           description: String(tpl.description || ''),
+          header_ru: String(tpl.header_ru ?? (tpl.content?.header?.ru ?? '')).trim(),
+          header_en: String(tpl.header_en ?? (tpl.content?.header?.en ?? '')).trim(),
           title_ru: String(tpl.title_ru ?? (tpl.content?.title?.ru ?? '')).trim(),
           title_en: String(tpl.title_en ?? (tpl.content?.title?.en ?? '')).trim(),
           body_ru: String(tpl.body_ru ?? (tpl.content?.body?.ru ?? '')),
@@ -143,6 +205,7 @@ module.exports = async function handler(req, res) {
         const out = {
           ...created,
           content: {
+            header: { ru: created.header_ru || '', en: created.header_en || '' },
             title: { ru: created.title_ru || '', en: created.title_en || '' },
             body: { ru: created.body_ru || '', en: created.body_en || '' },
           },
@@ -157,6 +220,8 @@ module.exports = async function handler(req, res) {
         const update = { updated_at: new Date().toISOString() };
         if (patch.name !== undefined) update.name = String(patch.name || '').trim();
         if (patch.description !== undefined) update.description = String(patch.description || '');
+        if (patch.header_ru !== undefined) update.header_ru = String(patch.header_ru ?? (patch.content?.header?.ru ?? ''));
+        if (patch.header_en !== undefined) update.header_en = String(patch.header_en ?? (patch.content?.header?.en ?? ''));
         if (patch.title_ru !== undefined) update.title_ru = String(patch.title_ru ?? (patch.content?.title?.ru ?? ''));
         if (patch.title_en !== undefined) update.title_en = String(patch.title_en ?? (patch.content?.title?.en ?? ''));
         if (patch.body_ru !== undefined) update.body_ru = String(patch.body_ru ?? (patch.content?.body?.ru ?? ''));
@@ -171,6 +236,7 @@ module.exports = async function handler(req, res) {
         const out = {
           ...updated,
           content: {
+            header: { ru: updated.header_ru || '', en: updated.header_en || '' },
             title: { ru: updated.title_ru || '', en: updated.title_en || '' },
             body: { ru: updated.body_ru || '', en: updated.body_en || '' },
           },
