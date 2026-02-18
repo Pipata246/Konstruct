@@ -109,13 +109,12 @@ module.exports = async function handler(req, res) {
       if (req.method === 'GET') {
         const { data: rows, error } = await supabase
           .from('templates')
-          .select('id, name, description, title_ru, title_en, body_ru, body_en, is_active, sort_order, variables, created_at, updated_at')
+          .select('id, name, description, title_ru, title_en, body_ru, body_en, is_active, sort_order, created_at, updated_at')
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: true });
         if (error) return res.status(500).json({ error: error.message });
         const templates = (rows || []).map((row) => ({
           ...row,
-          variables: row.variables != null ? (Array.isArray(row.variables) ? row.variables : JSON.parse(JSON.stringify(row.variables))) : [],
           content: {
             title: { ru: row.title_ru || '', en: row.title_en || '' },
             body: { ru: row.body_ru || '', en: row.body_en || '' },
@@ -128,7 +127,6 @@ module.exports = async function handler(req, res) {
         const tpl = body.template || body;
         const name = String(tpl.name || '').trim();
         if (!name) return res.status(400).json({ error: 'name обязателен' });
-        const variables = Array.isArray(tpl.variables) ? tpl.variables : (tpl.variables ? JSON.parse(JSON.stringify(tpl.variables)) : []);
         const row = {
           name,
           description: String(tpl.description || ''),
@@ -138,14 +136,12 @@ module.exports = async function handler(req, res) {
           body_en: String(tpl.body_en ?? (tpl.content?.body?.en ?? '')),
           is_active: tpl.is_active !== undefined ? !!tpl.is_active : true,
           sort_order: parseInt(tpl.sort_order, 10) || 0,
-          variables,
           updated_at: new Date().toISOString(),
         };
         const { data: created, error } = await supabase.from('templates').insert(row).select().single();
         if (error) return res.status(500).json({ error: error.message });
         const out = {
           ...created,
-          variables: created.variables != null ? (Array.isArray(created.variables) ? created.variables : JSON.parse(JSON.stringify(created.variables))) : [],
           content: {
             title: { ru: created.title_ru || '', en: created.title_en || '' },
             body: { ru: created.body_ru || '', en: created.body_en || '' },
@@ -167,7 +163,6 @@ module.exports = async function handler(req, res) {
         if (patch.body_en !== undefined) update.body_en = String(patch.body_en ?? (patch.content?.body?.en ?? ''));
         if (patch.is_active !== undefined) update.is_active = !!patch.is_active;
         if (patch.sort_order !== undefined) update.sort_order = parseInt(patch.sort_order, 10) || 0;
-        if (patch.variables !== undefined) update.variables = Array.isArray(patch.variables) ? patch.variables : (patch.variables ? JSON.parse(JSON.stringify(patch.variables)) : []);
         if (update.name !== undefined && !update.name) return res.status(400).json({ error: 'name не может быть пустым' });
 
         const { data: updated, error } = await supabase.from('templates').update(update).eq('id', id).select().single();
@@ -175,7 +170,6 @@ module.exports = async function handler(req, res) {
         if (!updated) return res.status(404).json({ error: 'Шаблон не найден' });
         const out = {
           ...updated,
-          variables: updated.variables != null ? (Array.isArray(updated.variables) ? updated.variables : JSON.parse(JSON.stringify(updated.variables))) : [],
           content: {
             title: { ru: updated.title_ru || '', en: updated.title_en || '' },
             body: { ru: updated.body_ru || '', en: updated.body_en || '' },
