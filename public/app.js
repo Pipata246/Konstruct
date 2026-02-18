@@ -786,7 +786,7 @@ const I18N = {
     },
     hero: {
       badge: "Сервис «Конструктор официальных обращений» — официальные обращения и другие документы",
-      title: "Соберите обращение в Конструкторе<br />официальных обращений",
+      title: "Конструктор официальных обращений",
       subtitle:
         "Пошаговый конструктор помогает сформировать юридически корректное обращение: вы отвечаете на простые вопросы — сервис собирает текст и готовит PDF.",
       templateNote: "Сайт поддерживает не только шаблон «Конструктор официальных обращений», но и другие типы запросов — шаблон выбирается в форме.",
@@ -1177,7 +1177,7 @@ const I18N = {
     },
     hero: {
       badge: "Official requests constructor — official requests and other documents",
-      title: "Build an official request<br />in the Constructor",
+      title: "Official requests constructor",
       subtitle:
         "A step‑by‑step form helps you create a legally correct request: you answer simple questions — the service assembles the text and prepares a PDF.",
       templateNote: "The site supports not only the “Official requests constructor” template but also other request types — choose a template in the form.",
