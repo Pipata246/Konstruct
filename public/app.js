@@ -1,5 +1,40 @@
 // Конструкт — фронтенд, демо-режим без бэкенда
 
+// Предопределённые переменные для шаблонов (админ выбирает, какие поля показывать пользователю).
+// key — подстановка {{key}} в тексте шаблона, labelRu/labelEn — подпись поля в форме.
+const PREDEFINED_VARIABLES = [
+  { key: 'fullName', labelRu: 'ФИО полностью', labelEn: 'Full name' },
+  { key: 'address', labelRu: 'Адрес регистрации и фактического проживания', labelEn: 'Registration and actual address' },
+  { key: 'passportSeries', labelRu: 'Паспорт: серия', labelEn: 'Passport: series' },
+  { key: 'passportNumber', labelRu: 'Паспорт: номер', labelEn: 'Passport: number' },
+  { key: 'passportIssued', labelRu: 'Паспорт: кем и когда выдан', labelEn: 'Passport: issued by' },
+  { key: 'phone', labelRu: 'Контактный телефон', labelEn: 'Contact phone' },
+  { key: 'ukName', labelRu: 'Кому (название УК / ФИО директора)', labelEn: 'To (MC name / director)' },
+  { key: 'ukAddress', labelRu: 'Адрес УК', labelEn: 'MC address' },
+  { key: 'period', labelRu: 'Период начислений', labelEn: 'Billing period' },
+  { key: 'accountNumber', labelRu: 'Номер лицевого счёта (необязательно)', labelEn: 'Account number (optional)' },
+  { key: 'emailForReply', labelRu: 'Email для ответа', labelEn: 'Email for reply' },
+  { key: 'extraInfo', labelRu: 'Иная информация (необязательно)', labelEn: 'Other information (optional)' },
+  { key: 'inn', labelRu: 'ИНН', labelEn: 'Tax ID (INN)' },
+  { key: 'kpp', labelRu: 'КПП', labelEn: 'KPP' },
+  { key: 'ooo', labelRu: 'Наименование организации (ООО/АО)', labelEn: 'Organization name (LLC/JSC)' },
+  { key: 'legalAddress', labelRu: 'Юридический адрес', labelEn: 'Legal address' },
+  { key: 'postAddress', labelRu: 'Почтовый адрес', labelEn: 'Postal address' },
+  { key: 'bik', labelRu: 'БИК банка', labelEn: 'Bank BIK' },
+  { key: 'bankName', labelRu: 'Название банка', labelEn: 'Bank name' },
+  { key: 'bankAccount', labelRu: 'Расчётный счёт', labelEn: 'Bank account' },
+  { key: 'position', labelRu: 'Должность', labelEn: 'Position' },
+  { key: 'snils', labelRu: 'СНИЛС', labelEn: 'SNILS' },
+  { key: 'birthDate', labelRu: 'Дата рождения', labelEn: 'Date of birth' },
+  { key: 'birthPlace', labelRu: 'Место рождения', labelEn: 'Place of birth' },
+  { key: 'cadastralNumber', labelRu: 'Кадастровый номер помещения', labelEn: 'Cadastral number' },
+  { key: 'contractNumber', labelRu: 'Номер договора', labelEn: 'Contract number' },
+  { key: 'contractDate', labelRu: 'Дата договора', labelEn: 'Contract date' },
+  { key: 'claimAmount', labelRu: 'Сумма требований (руб.)', labelEn: 'Claim amount (RUB)' },
+  { key: 'reason', labelRu: 'Основание (причина запроса)', labelEn: 'Reason for request' },
+  { key: 'deliveryMethod', labelRu: 'Способ получения ответа', labelEn: 'Response delivery method' },
+];
+
 const state = {
   route: "home",
   lang: "ru",
@@ -11,18 +46,7 @@ const state = {
   templates: [],
   constructorForm: {
     templateId: "",
-    fullName: "",
-    address: "",
-    passportSeries: "",
-    passportNumber: "",
-    passportIssued: "",
-    phone: "",
-    ukName: "",
-    ukAddress: "",
-    accountNumber: "",
-    period: "",
-    emailForReply: "",
-    extraInfo: "",
+    fields: {}, // значения полей по ключу переменной (key → value); список ключей задаётся шаблоном
     services: {
       coldWater: true,
       hotWater: false,
@@ -58,7 +82,45 @@ async function fetchConfig() {
   return r.json();
 }
 
+function getTemplateVariables(tpl) {
+  const list = tpl?.variables;
+  if (Array.isArray(list)) {
+    if (list.length === 0) return [];
+    return list.map((v) => ({
+      key: String(v.key || '').trim() || 'field',
+      label: String(v.label || '').trim() || v.key || 'Поле',
+    })).filter((v) => v.key !== 'field' || v.label !== 'Поле');
+  }
+  return getDefault402Variables();
+}
+
+function getDefault402Variables() {
+  return PREDEFINED_VARIABLES.slice(0, 12).map((v) => ({
+    key: v.key,
+    label: state.lang === 'ru' ? v.labelRu : v.labelEn,
+  }));
+}
+
+function getVariableLabel(variableKey, lang) {
+  const v = PREDEFINED_VARIABLES.find((x) => x.key === variableKey);
+  return v ? (lang === 'ru' ? v.labelRu : v.labelEn) : variableKey;
+}
+
 function getBuiltInTemplates() {
+  const defaultVars = [
+    { key: 'fullName', label: 'ФИО полностью' },
+    { key: 'address', label: 'Адрес регистрации и фактического проживания' },
+    { key: 'passportSeries', label: 'Паспорт: серия' },
+    { key: 'passportNumber', label: 'Паспорт: номер' },
+    { key: 'passportIssued', label: 'Паспорт: кем и когда выдан' },
+    { key: 'phone', label: 'Контактный телефон' },
+    { key: 'ukName', label: 'Кому (название УК / ФИО директора)' },
+    { key: 'ukAddress', label: 'Адрес УК' },
+    { key: 'period', label: 'Период начислений' },
+    { key: 'accountNumber', label: 'Номер лицевого счёта (необязательно)' },
+    { key: 'emailForReply', label: 'Email для ответа' },
+    { key: 'extraInfo', label: 'Иная информация (необязательно)' },
+  ];
   return [
     {
       id: 'builtin-402',
@@ -66,6 +128,7 @@ function getBuiltInTemplates() {
       description: 'Встроенный шаблон (fallback).',
       sort_order: 0,
       is_active: true,
+      variables: defaultVars,
       content: {
         version: 1,
         title: {
@@ -113,6 +176,16 @@ function getBuiltInTemplates() {
   ];
 }
 
+function ensureConstructorFieldsForTemplate(tpl) {
+  const variables = getTemplateVariables(tpl);
+  const keys = new Set((variables || []).map((v) => v.key));
+  const fields = { ...(state.constructorForm.fields || {}) };
+  keys.forEach((k) => {
+    if (fields[k] === undefined) fields[k] = '';
+  });
+  state.constructorForm = { ...state.constructorForm, fields };
+}
+
 function setTemplates(list) {
   const templates = Array.isArray(list) && list.length ? list : getBuiltInTemplates();
   state.templates = templates;
@@ -122,6 +195,8 @@ function setTemplates(list) {
   if (nextId && nextId !== current) {
     state.constructorForm = { ...state.constructorForm, templateId: nextId };
   }
+  const tpl = templates.find((t) => String(t.id) === String(state.constructorForm.templateId)) || templates[0];
+  if (tpl) ensureConstructorFieldsForTemplate(tpl);
 }
 
 async function initAppConfig() {
@@ -624,10 +699,11 @@ const I18N = {
       privacy: "Политика конфиденциальности",
     },
     hero: {
-      badge: "Сервис «Конструкт» — запросы в УК по 402‑ФЗ",
+      badge: "Сервис «Конструкт» — запросы в УК и другие документы",
       title: "Соберите официальный запрос в УК<br />как из конструктора",
       subtitle:
-        "Пошаговый конструктор помогает сформировать юридически корректное обращение по 402‑ФЗ: вы отвечаете на простые вопросы — сервис собирает текст и готовит PDF.",
+        "Пошаговый конструктор помогает сформировать юридически корректное обращение: вы отвечаете на простые вопросы — сервис собирает текст и готовит PDF.",
+      templateNote: "Сайт поддерживает не только шаблон по 402‑ФЗ, но и другие типы запросов — шаблон выбирается в форме.",
       pills: [
         "Пошаговый конструктор",
         "Черновик PDF до оплаты",
@@ -780,7 +856,7 @@ const I18N = {
 
 <h2>2. Термины и определения</h2>
 <p><strong>Сервис</strong> — веб-сайт и мини-приложение «Конструкт», доступные в Telegram и в браузере.</p>
-<p><strong>Услуга</strong> — формирование текста официального запроса в управляющую компанию (УК) в соответствии с Федеральным законом № 402-ФЗ «О бухгалтерском учёте», подготовка черновика в формате PDF, а при выборе соответствующего тарифа — юридическая проверка документа экспертом.</p>
+<p><strong>Услуга</strong> — формирование текста официального запроса в управляющую компанию (УК) и иные документы по выбранному шаблону (в том числе по Федеральному закону № 402-ФЗ «О бухгалтерском учёте»), подготовка черновика в формате PDF, а при выборе соответствующего тарифа — юридическая проверка документа экспертом.</p>
 <p><strong>Документ</strong> — сформированный запрос в формате PDF, готовый к отправке в УК.</p>
 
 <h2>3. Предмет договора</h2>
@@ -897,6 +973,11 @@ const I18N = {
       templateBodyEn: "Текст (EN)",
       templateCancel: "Отмена",
       templateSave: "Сохранить шаблон",
+      templateVariablesLabel: "Поля для ввода пользователя (только они появятся в форме)",
+      addField: "Добавить поле",
+      customField: "Своё поле…",
+      variableKeyPlaceholder: "ключ (латиница, например: ooo)",
+      variableLabelPlaceholder: "подпись (например: ООО)",
     },
     profile: {
       title: "Профиль",
@@ -947,10 +1028,11 @@ const I18N = {
       privacy: "Privacy policy",
     },
     hero: {
-      badge: "Konstruct — requests to the management company under 402‑FZ",
+      badge: "Konstruct — requests to the management company and other documents",
       title: "Build an official request<br />to your management company",
       subtitle:
-        "A step‑by‑step form helps you create a legally correct request under 402‑FZ: you answer simple questions — the service assembles the text and prepares a PDF.",
+        "A step‑by‑step form helps you create a legally correct request: you answer simple questions — the service assembles the text and prepares a PDF.",
+      templateNote: "The site supports not only the 402‑FZ template but also other request types — choose a template in the form.",
       pills: [
         "Step‑by‑step constructor",
         "Draft PDF before payment",
@@ -1176,6 +1258,11 @@ const I18N = {
       templateBodyEn: "Body (EN)",
       templateCancel: "Cancel",
       templateSave: "Save template",
+      templateVariablesLabel: "User input fields (only these will appear in the form)",
+      addField: "Add field",
+      customField: "Custom field…",
+      variableKeyPlaceholder: "key (e.g. ooo)",
+      variableLabelPlaceholder: "label (e.g. LLC)",
     },
     profile: {
       title: "Profile",
@@ -1213,10 +1300,8 @@ function setUser(user) {
 }
 
 function updateConstructorField(field, value) {
-  state.constructorForm = {
-    ...state.constructorForm,
-    [field]: value,
-  };
+  const fields = { ...(state.constructorForm.fields || {}), [field]: value };
+  state.constructorForm = { ...state.constructorForm, fields };
   refreshLetterPreview();
 }
 
@@ -1232,22 +1317,15 @@ function toggleService(key) {
 }
 
 function clearConstructorForm() {
+  const templates = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
+  const firstId = String(templates[0]?.id || '');
   state.constructorForm = {
-    templateId: "",
-    fullName: "",
-    address: "",
-    passportSeries: "",
-    passportNumber: "",
-    passportIssued: "",
-    phone: "",
-    ukName: "",
-    ukAddress: "",
-    accountNumber: "",
-    period: "",
-    emailForReply: "",
-    extraInfo: "",
+    templateId: firstId,
+    fields: {},
     services: { coldWater: true, hotWater: false, wastewater: false, electricity: false, gas: false, heating: false, solidWaste: false },
   };
+  const tpl = templates.find((t) => String(t.id) === firstId) || templates[0];
+  if (tpl) ensureConstructorFieldsForTemplate(tpl);
   state.withExpert = false;
   state.editingDraftId = null;
   state.editingOrderId = null;
@@ -1409,7 +1487,7 @@ function getRequestDocParts(f, lang) {
 function getLetterPreviewFromData(f) {
   if (!f) f = state.constructorForm;
   const lang = state.lang;
-  const { ru } = getRequestDocParts(f, lang);
+  const ru = state.lang === 'ru';
 
   function pickTemplate(templateId) {
     const list = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
@@ -1423,28 +1501,30 @@ function getLetterPreviewFromData(f) {
     });
   }
 
-  const vars = {
-    fullName: (f.fullName != null && String(f.fullName).trim()) ? String(f.fullName).trim() : "___________",
-    ukName: (f.ukName != null && String(f.ukName).trim()) ? String(f.ukName).trim() : "___________",
-    address: (f.address != null && String(f.address).trim()) ? String(f.address).trim() : "___________",
-    passportSeries: (f.passportSeries != null && String(f.passportSeries).trim()) ? String(f.passportSeries).trim() : "____",
-    passportNumber: (f.passportNumber != null && String(f.passportNumber).trim()) ? String(f.passportNumber).trim() : "______",
-    passportIssued: (f.passportIssued != null && String(f.passportIssued).trim()) ? String(f.passportIssued).trim() : "___________",
-    phone: (f.phone != null && String(f.phone).trim()) ? String(f.phone).trim() : "___________",
-    emailForReply: (f.emailForReply != null && String(f.emailForReply).trim()) ? String(f.emailForReply).trim() : "___________",
-    accountNumber: (f.accountNumber != null && String(f.accountNumber).trim()) ? String(f.accountNumber).trim() : "____",
-    period: (f.period != null && String(f.period).trim()) ? String(f.period).trim() : "____",
-    extraInfo: (f.extraInfo != null && String(f.extraInfo).trim()) ? String(f.extraInfo).trim() : "",
-  };
-
   const tpl = pickTemplate(f.templateId || state.constructorForm.templateId);
+  const variableList = getTemplateVariables(tpl);
+  const vars = {};
+  variableList.forEach((v) => {
+    const raw = (f.fields && f.fields[v.key] != null) ? f.fields[v.key] : (f[v.key] != null ? f[v.key] : '');
+    const s = String(raw ?? '').trim();
+    vars[v.key] = s || (v.key === 'extraInfo' ? '' : '___________');
+  });
+
   const titleRaw = (tpl?.content?.title && (tpl.content.title[lang] || tpl.content.title[ru ? 'ru' : 'en'] || tpl.content.title.ru || tpl.content.title.en)) || '';
   const bodyRaw = (tpl?.content?.body && (tpl.content.body[lang] || tpl.content.body[ru ? 'ru' : 'en'] || tpl.content.body.ru || tpl.content.body.en)) || '';
   const title = fillPlaceholders(titleRaw, vars);
 
+  const ukName = vars.ukName ?? '___________';
+  const fullName = vars.fullName ?? '___________';
+  const passportSeries = vars.passportSeries ?? '____';
+  const passportNumber = vars.passportNumber ?? '______';
+  const passportIssued = vars.passportIssued ?? '___________';
+  const address = vars.address ?? '___________';
+  const phone = vars.phone ?? '___________';
+  const emailForReply = vars.emailForReply ?? '___________';
   const header = ru
-    ? `Кому: ${vars.ukName}\nОт: ${vars.fullName}\nПаспорт: серия ${vars.passportSeries} номер ${vars.passportNumber}, выдан ${vars.passportIssued}\nАдрес регистрации: ${vars.address}\nКонтактный телефон: ${vars.phone}  Email: ${vars.emailForReply}`
-    : `To: ${vars.ukName}\nFrom: ${vars.fullName}\nPassport: series ${vars.passportSeries} no. ${vars.passportNumber}, issued ${vars.passportIssued}\nAddress: ${vars.address}\nPhone: ${vars.phone}  Email: ${vars.emailForReply}`;
+    ? `Кому: ${ukName}\nОт: ${fullName}\nПаспорт: серия ${passportSeries} номер ${passportNumber}, выдан ${passportIssued}\nАдрес регистрации: ${address}\nКонтактный телефон: ${phone}  Email: ${emailForReply}`
+    : `To: ${ukName}\nFrom: ${fullName}\nPassport: series ${passportSeries} no. ${passportNumber}, issued ${passportIssued}\nAddress: ${address}\nPhone: ${phone}  Email: ${emailForReply}`;
 
   const body = fillPlaceholders(bodyRaw, vars);
 
@@ -1486,37 +1566,39 @@ function buildPdfDocumentHtml(f, ru) {
     });
   }
 
-  const vars = {
-    fullName: (f.fullName != null && String(f.fullName).trim()) ? String(f.fullName).trim() : "___________",
-    ukName: (f.ukName != null && String(f.ukName).trim()) ? String(f.ukName).trim() : "___________",
-    address: (f.address != null && String(f.address).trim()) ? String(f.address).trim() : "___________",
-    passportSeries: (f.passportSeries != null && String(f.passportSeries).trim()) ? String(f.passportSeries).trim() : "____",
-    passportNumber: (f.passportNumber != null && String(f.passportNumber).trim()) ? String(f.passportNumber).trim() : "______",
-    passportIssued: (f.passportIssued != null && String(f.passportIssued).trim()) ? String(f.passportIssued).trim() : "___________",
-    phone: (f.phone != null && String(f.phone).trim()) ? String(f.phone).trim() : "___________",
-    emailForReply: (f.emailForReply != null && String(f.emailForReply).trim()) ? String(f.emailForReply).trim() : "___________",
-    accountNumber: (f.accountNumber != null && String(f.accountNumber).trim()) ? String(f.accountNumber).trim() : "____",
-    period: (f.period != null && String(f.period).trim()) ? String(f.period).trim() : "____",
-    extraInfo: (f.extraInfo != null && String(f.extraInfo).trim()) ? String(f.extraInfo).trim() : "",
-  };
-
   const tpl = pickTemplate(f.templateId || state.constructorForm.templateId);
+  const variableList = getTemplateVariables(tpl);
+  const vars = {};
+  variableList.forEach((v) => {
+    const raw = (f.fields && f.fields[v.key] != null) ? f.fields[v.key] : (f[v.key] != null ? f[v.key] : '');
+    const s = String(raw ?? '').trim();
+    vars[v.key] = s || (v.key === 'extraInfo' ? '' : '___________');
+  });
+
   const titleRaw = (tpl?.content?.title && (tpl.content.title[lang] || tpl.content.title.ru || tpl.content.title.en)) || '';
   const bodyRaw = (tpl?.content?.body && (tpl.content.body[lang] || tpl.content.body.ru || tpl.content.body.en)) || '';
   const titleText = fillPlaceholders(titleRaw, vars);
   const bodyText = fillPlaceholders(bodyRaw, vars);
 
+  const ukName = vars.ukName ?? '___________';
+  const fullName = vars.fullName ?? '___________';
+  const passportSeries = vars.passportSeries ?? '____';
+  const passportNumber = vars.passportNumber ?? '______';
+  const passportIssued = vars.passportIssued ?? '___________';
+  const address = vars.address ?? '___________';
+  const phone = vars.phone ?? '___________';
+  const emailForReply = vars.emailForReply ?? '___________';
   const headerBlock = ru
-    ? `<p style="margin:0 0 6px;"><strong>Кому:</strong> ${escapeHtml(vars.ukName)}</p>
-<p style="margin:0 0 6px;"><strong>От:</strong> ${escapeHtml(vars.fullName)}</p>
-<p style="margin:0 0 6px;"><strong>Паспорт:</strong> серия ${escapeHtml(vars.passportSeries)} номер ${escapeHtml(vars.passportNumber)}, выдан ${escapeHtml(vars.passportIssued)}</p>
-<p style="margin:0 0 6px;"><strong>Адрес регистрации:</strong> ${escapeHtml(vars.address)}</p>
-<p style="margin:0 0 0;"><strong>Контактный телефон:</strong> ${escapeHtml(vars.phone)}  <strong>Email:</strong> ${escapeHtml(vars.emailForReply)}</p>`
-    : `<p style="margin:0 0 6px;"><strong>To:</strong> ${escapeHtml(vars.ukName)}</p>
-<p style="margin:0 0 6px;"><strong>From:</strong> ${escapeHtml(vars.fullName)}</p>
-<p style="margin:0 0 6px;"><strong>Passport:</strong> series ${escapeHtml(vars.passportSeries)} no. ${escapeHtml(vars.passportNumber)}, issued ${escapeHtml(vars.passportIssued)}</p>
-<p style="margin:0 0 6px;"><strong>Address:</strong> ${escapeHtml(vars.address)}</p>
-<p style="margin:0 0 0;"><strong>Phone:</strong> ${escapeHtml(vars.phone)}  <strong>Email:</strong> ${escapeHtml(vars.emailForReply)}</p>`;
+    ? `<p style="margin:0 0 6px;"><strong>Кому:</strong> ${escapeHtml(ukName)}</p>
+<p style="margin:0 0 6px;"><strong>От:</strong> ${escapeHtml(fullName)}</p>
+<p style="margin:0 0 6px;"><strong>Паспорт:</strong> серия ${escapeHtml(passportSeries)} номер ${escapeHtml(passportNumber)}, выдан ${escapeHtml(passportIssued)}</p>
+<p style="margin:0 0 6px;"><strong>Адрес регистрации:</strong> ${escapeHtml(address)}</p>
+<p style="margin:0 0 0;"><strong>Контактный телефон:</strong> ${escapeHtml(phone)}  <strong>Email:</strong> ${escapeHtml(emailForReply)}</p>`
+    : `<p style="margin:0 0 6px;"><strong>To:</strong> ${escapeHtml(ukName)}</p>
+<p style="margin:0 0 6px;"><strong>From:</strong> ${escapeHtml(fullName)}</p>
+<p style="margin:0 0 6px;"><strong>Passport:</strong> series ${escapeHtml(passportSeries)} no. ${escapeHtml(passportNumber)}, issued ${escapeHtml(passportIssued)}</p>
+<p style="margin:0 0 6px;"><strong>Address:</strong> ${escapeHtml(address)}</p>
+<p style="margin:0 0 0;"><strong>Phone:</strong> ${escapeHtml(phone)}  <strong>Email:</strong> ${escapeHtml(emailForReply)}</p>`;
 
   function textToHtml(text) {
     const src = String(text || '').replace(/\r\n/g, '\n').trim();
@@ -1710,8 +1792,9 @@ function openAdminOrderModal(order) {
 
 function formatOrderPreview(order) {
   if (!order?.data) return '';
-  const uk = order.data.ukName || (state.lang === 'ru' ? 'УК не указана' : 'MC not specified');
-  const period = order.data.period || '';
+  const f = order.data.fields || order.data;
+  const uk = f.ukName || (state.lang === 'ru' ? 'УК не указана' : 'MC not specified');
+  const period = f.period || '';
   return [uk, period].filter(Boolean).join(' · ') || (state.lang === 'ru' ? 'Заказ' : 'Order');
 }
 
@@ -1843,6 +1926,7 @@ function renderHome() {
             <p class="tagline">
               ${tHero.tagline}
             </p>
+            ${tHero.templateNote ? `<p class="small muted-text" style="margin-top:10px">${tHero.templateNote}</p>` : ''}
           </div>
           <div class="hero-side neo-card float-up-delayed">
             <h2 class="section-title">${tHero.howTitle}</h2>
@@ -1912,56 +1996,44 @@ function renderHome() {
           <div class="constructor-grid">
           <div class="neo-card">
             <form id="constructor-form">
-              ${Array.isArray(state.templates) && state.templates.length > 1 ? `
-              <div class="field">
-                <div class="stacked-label">${tForm.template}</div>
-                <select class="input" name="templateId">
-                  ${(state.templates || []).map(tpl => `<option value="${escapeHtml(String(tpl.id))}" ${String(tpl.id) === String(state.constructorForm.templateId) ? 'selected' : ''}>${escapeHtml(String(tpl.name || 'Template'))}</option>`).join('')}
-                </select>
-              </div>
-              ` : ''}
-              <div class="field">
-                <div class="stacked-label">${tForm.fullName}</div>
-                <input class="input" name="fullName" value="${state.constructorForm.fullName}" placeholder="${tForm.fullNamePlaceholder}" />
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.address}</div>
-                <input class="input" name="address" value="${state.constructorForm.address}" placeholder="${tForm.addressPlaceholder}" />
-              </div>
-              <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;">
-                <div style="flex:0 0 80px;">
-                  <div class="stacked-label">${tForm.passportSeries}</div>
-                  <input class="input" name="passportSeries" value="${state.constructorForm.passportSeries}" placeholder="0000" maxlength="4" />
-                </div>
-                <div style="flex:0 0 120px;">
-                  <div class="stacked-label">${tForm.passportNumber}</div>
-                  <input class="input" name="passportNumber" value="${state.constructorForm.passportNumber}" placeholder="000000" maxlength="6" />
-                </div>
-                <div style="flex:1;min-width:180px;">
-                  <div class="stacked-label">${tForm.passportIssued}</div>
-                  <input class="input" name="passportIssued" value="${state.constructorForm.passportIssued}" placeholder="${tForm.passportIssuedPlaceholder}" />
-                </div>
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.phone}</div>
-                <input class="input" name="phone" value="${state.constructorForm.phone}" placeholder="${tForm.phonePlaceholder}" type="tel" />
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.ukName}</div>
-                <input class="input" name="ukName" value="${state.constructorForm.ukName}" placeholder="${tForm.ukNamePlaceholder}" />
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.ukAddress}</div>
-                <input class="input" name="ukAddress" value="${state.constructorForm.ukAddress}" placeholder="${tForm.ukAddressPlaceholder}" />
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.period}</div>
-                <input class="input" name="period" value="${state.constructorForm.period}" placeholder="${tForm.periodPlaceholder}" />
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.accountNumber}</div>
-                <input class="input" name="accountNumber" value="${state.constructorForm.accountNumber}" placeholder="${tForm.accountNumberPlaceholder}" />
-              </div>
+              ${(function() {
+                const templates = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
+                const tpl = templates.find((t) => String(t.id) === String(state.constructorForm.templateId)) || templates[0];
+                const variables = getTemplateVariables(tpl);
+                const fields = state.constructorForm.fields || {};
+                const esc = (s) => (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                let html = '';
+                if (templates.length > 1) {
+                  html += `<div class="field"><div class="stacked-label">${tForm.template}</div><select class="input" name="templateId">${templates.map(t => `<option value="${escapeHtml(String(t.id))}" ${String(t.id) === String(state.constructorForm.templateId) ? 'selected' : ''}>${escapeHtml(String(t.name || 'Template'))}</option>`).join('')}</select></div>`;
+                }
+                const passportKeys = ['passportSeries','passportNumber','passportIssued'];
+                const passportVars = passportKeys.map((k) => variables.find((x) => x.key === k)).filter(Boolean);
+                let passportRendered = false;
+                variables.forEach((v) => {
+                  if (passportKeys.includes(v.key)) {
+                    if (!passportRendered) {
+                      passportRendered = true;
+                      html += '<div class="field" style="display:flex;gap:8px;flex-wrap:wrap;">';
+                      passportVars.forEach((pv) => {
+                        const val = esc(fields[pv.key]);
+                        if (pv.key === 'passportSeries') html += `<div style="flex:0 0 80px;"><div class="stacked-label">${escapeHtml(pv.label)}</div><input class="input" name="${pv.key}" value="${val}" placeholder="0000" maxlength="4" /></div>`;
+                        else if (pv.key === 'passportNumber') html += `<div style="flex:0 0 120px;"><div class="stacked-label">${escapeHtml(pv.label)}</div><input class="input" name="${pv.key}" value="${val}" placeholder="000000" maxlength="6" /></div>`;
+                        else html += `<div style="flex:1;min-width:180px;"><div class="stacked-label">${escapeHtml(pv.label)}</div><input class="input" name="${pv.key}" value="${val}" placeholder="${escapeHtml(pv.label)}" /></div>`;
+                      });
+                      html += '</div>';
+                    }
+                    return;
+                  }
+                  const val = esc(fields[v.key]);
+                  if (v.key === 'extraInfo') {
+                    html += `<div class="field"><div class="stacked-label">${escapeHtml(v.label)}</div><textarea class="textarea input" name="${escapeHtml(v.key)}" placeholder="${escapeHtml(v.label)}" rows="2">${val}</textarea></div>`;
+                  } else {
+                    const type = v.key === 'emailForReply' ? 'email' : (v.key === 'phone' ? 'tel' : 'text');
+                    html += `<div class="field"><div class="stacked-label">${escapeHtml(v.label)}</div><input class="input" name="${escapeHtml(v.key)}" value="${val}" placeholder="${escapeHtml(v.label)}" type="${type}" /></div>`;
+                  }
+                });
+                return html;
+              })()}
               <div class="field">
                 <div class="stacked-label">${tForm.services}</div>
                 <div class="checkbox-row">
@@ -1973,14 +2045,6 @@ function renderHome() {
                   ${renderServiceCheckbox("heating", tForm.servicesOptions.heating)}
                   ${renderServiceCheckbox("solidWaste", tForm.servicesOptions.solidWaste)}
                 </div>
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.email}</div>
-                <input class="input" name="emailForReply" value="${state.constructorForm.emailForReply}" placeholder="${tForm.emailPlaceholder}" type="email" />
-              </div>
-              <div class="field">
-                <div class="stacked-label">${tForm.extraInfo}</div>
-                <textarea class="textarea input" name="extraInfo" placeholder="${tForm.extraInfoPlaceholder}" rows="2">${(state.constructorForm.extraInfo || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
               </div>
               <div class="field">
                 <label class="checkbox-pill">
@@ -2054,32 +2118,43 @@ function renderHome() {
     </div>
   `;
 
-  // Обработчики конструктора — делегирование на форму для надёжной работы в TMA
+  // Обработчики конструктора — поля задаются шаблоном (template.variables)
   const form = document.getElementById("constructor-form");
   if (form) {
-    const textFields = ["templateId", "fullName", "address", "passportSeries", "passportNumber", "passportIssued", "phone", "ukName", "ukAddress", "period", "accountNumber", "emailForReply", "extraInfo"];
-    const handleInput = (e) => {
+    form.addEventListener("input", (e) => {
       const el = e.target;
       const name = el?.getAttribute?.("name");
-      if (name && textFields.includes(name)) {
-        updateConstructorField(name, el.value);
-      }
-    };
-    const handleChange = (e) => {
-      const el = e.target;
       const service = el?.getAttribute?.("data-service");
-      if (service) toggleService(service);
-    };
-    form.addEventListener("input", handleInput);
-    form.addEventListener("keyup", handleInput);
+      if (service) { toggleService(service); return; }
+      if (name === "templateId") {
+        state.constructorForm = { ...state.constructorForm, templateId: el.value || '' };
+        const templates = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
+        const tpl = templates.find((t) => String(t.id) === el.value);
+        if (tpl) ensureConstructorFieldsForTemplate(tpl);
+        render();
+        return;
+      }
+      if (name) updateConstructorField(name, el.value);
+    });
+    form.addEventListener("keyup", (e) => {
+      const el = e.target;
+      const name = el?.getAttribute?.("name");
+      if (name && name !== "templateId" && !el.getAttribute?.("data-service")) updateConstructorField(name, el.value);
+    });
     form.addEventListener("change", (e) => {
       const el = e.target;
       const name = el?.getAttribute?.("name");
-      if (name && textFields.includes(name)) {
-        updateConstructorField(name, el.value);
-      } else {
-        handleChange(e);
+      const service = el?.getAttribute?.("data-service");
+      if (service) { toggleService(service); return; }
+      if (name === "templateId") {
+        state.constructorForm = { ...state.constructorForm, templateId: el.value || '' };
+        const templates = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
+        const tpl = templates.find((t) => String(t.id) === el.value);
+        if (tpl) ensureConstructorFieldsForTemplate(tpl);
+        render();
+        return;
       }
+      if (name) updateConstructorField(name, el.value);
     });
   }
 
@@ -2190,8 +2265,9 @@ function renderHome() {
 
 function formatDraftPreview(d) {
   if (!d) return '';
-  const uk = d.ukName || (state.lang === 'ru' ? 'УК не указана' : 'MC not specified');
-  const period = d.period || '';
+  const f = d.fields || d;
+  const uk = f.ukName || (state.lang === 'ru' ? 'УК не указана' : 'MC not specified');
+  const period = f.period || '';
   return [uk, period].filter(Boolean).join(' · ') || (state.lang === 'ru' ? 'Черновик' : 'Draft');
 }
 
@@ -2200,21 +2276,20 @@ function loadOrderIntoConstructor(order) {
   const d = order.data;
   state.editingOrderId = order.id;
   state.editingDraftId = null;
+  const fields = d.fields && typeof d.fields === 'object' ? { ...d.fields } : {
+    fullName: d.fullName || '', address: d.address || '', passportSeries: d.passportSeries || '', passportNumber: d.passportNumber || '', passportIssued: d.passportIssued || '',
+    phone: d.phone || '', ukName: d.ukName || '', ukAddress: d.ukAddress || '', period: d.period || '', accountNumber: d.accountNumber || '',
+    emailForReply: d.emailForReply || '', extraInfo: d.extraInfo || '',
+  };
   state.constructorForm = {
-    fullName: d.fullName || '',
-    address: d.address || '',
-    passportSeries: d.passportSeries || '',
-    passportNumber: d.passportNumber || '',
-    passportIssued: d.passportIssued || '',
-    phone: d.phone || '',
-    ukName: d.ukName || '',
-    ukAddress: d.ukAddress || '',
-    period: d.period || '',
-    emailForReply: d.emailForReply || '',
-    extraInfo: d.extraInfo || '',
+    templateId: d.templateId || state.constructorForm.templateId || '',
+    fields,
     services: d.services || { coldWater: true, hotWater: false, wastewater: false, electricity: false, gas: false, heating: false, solidWaste: false },
   };
   state.withExpert = !!d.withExpert;
+  const templates = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
+  const tpl = templates.find((t) => String(t.id) === String(state.constructorForm.templateId)) || templates[0];
+  if (tpl) ensureConstructorFieldsForTemplate(tpl);
   window.location.hash = '#constructor';
   render();
 }
@@ -2224,21 +2299,20 @@ function loadDraftIntoConstructor(draft) {
   const d = draft.data;
   state.editingDraftId = draft.id;
   state.editingOrderId = null;
+  const fields = d.fields && typeof d.fields === 'object' ? { ...d.fields } : {
+    fullName: d.fullName || '', address: d.address || '', passportSeries: d.passportSeries || '', passportNumber: d.passportNumber || '', passportIssued: d.passportIssued || '',
+    phone: d.phone || '', ukName: d.ukName || '', ukAddress: d.ukAddress || '', period: d.period || '', accountNumber: d.accountNumber || '',
+    emailForReply: d.emailForReply || '', extraInfo: d.extraInfo || '',
+  };
   state.constructorForm = {
-    fullName: d.fullName || '',
-    address: d.address || '',
-    passportSeries: d.passportSeries || '',
-    passportNumber: d.passportNumber || '',
-    passportIssued: d.passportIssued || '',
-    phone: d.phone || '',
-    ukName: d.ukName || '',
-    ukAddress: d.ukAddress || '',
-    period: d.period || '',
-    emailForReply: d.emailForReply || '',
-    extraInfo: d.extraInfo || '',
+    templateId: d.templateId || state.constructorForm.templateId || '',
+    fields,
     services: d.services || { coldWater: true, hotWater: false, wastewater: false, electricity: false, gas: false, heating: false, solidWaste: false },
   };
   state.withExpert = !!d.withExpert;
+  const templates = Array.isArray(state.templates) && state.templates.length ? state.templates : getBuiltInTemplates();
+  const tpl = templates.find((t) => String(t.id) === String(state.constructorForm.templateId)) || templates[0];
+  if (tpl) ensureConstructorFieldsForTemplate(tpl);
   window.location.hash = '#constructor';
   render();
 }
@@ -2498,6 +2572,14 @@ function openTemplateEditorModal(existing) {
         <input class="input" id="tpl-sort" type="number" style="width:110px" value="${Number(tpl.sort_order || 0)}" />
       </div>
     </div>
+    <div class="field" id="tpl-variables-wrap">
+      <div class="stacked-label">${t.templateVariablesLabel}</div>
+      <div id="tpl-variables-list" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:36px;margin-bottom:8px"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button type="button" class="secondary-btn" id="tpl-add-field" style="width:36px;height:36px;border-radius:50%;padding:0;font-size:18px;line-height:1" title="${t.addField}">+</button>
+        <span class="small muted-text">${t.addField}</span>
+      </div>
+    </div>
     <div class="field">
       <div class="stacked-label">${t.templateTitleRu}</div>
       <textarea class="textarea input" id="tpl-title-ru" rows="3" placeholder="Например: ЗАПРОС о предоставлении документов (в соответствии с ФЗ № 402-ФЗ)">${escapeHtml(titleRu)}</textarea>
@@ -2524,6 +2606,70 @@ function openTemplateEditorModal(existing) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
+  const listEl = box.querySelector('#tpl-variables-list');
+  const variables = Array.isArray(tpl.variables) && tpl.variables.length ? tpl.variables : (tpl.id ? [] : PREDEFINED_VARIABLES.slice(0, 12).map((p) => ({ key: p.key, label: state.lang === 'ru' ? p.labelRu : p.labelEn })));
+
+  function getCurrentVariables() {
+    return Array.from(box.querySelectorAll('#tpl-variables-list .tpl-var-chip')).map((el) => ({
+      key: el.getAttribute('data-key') || '',
+      label: el.getAttribute('data-label') || '',
+    })).filter((v) => v.key);
+  }
+
+  variables.forEach((v) => {
+    const chip = document.createElement('span');
+    chip.className = 'tpl-var-chip';
+    chip.setAttribute('data-key', v.key);
+    chip.setAttribute('data-label', v.label);
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:var(--bg-soft,#eee);padding:4px 8px;border-radius:6px;font-size:13px';
+    chip.innerHTML = `<span>${escapeHtml(v.label)}</span><button type="button" class="tpl-var-remove" aria-label="Удалить" style="background:none;border:none;cursor:pointer;padding:0;margin:0;color:#666;font-size:16px;line-height:1">&times;</button>`;
+    chip.querySelector('.tpl-var-remove').addEventListener('click', () => chip.remove());
+    listEl.appendChild(chip);
+  });
+
+  box.querySelector('#tpl-add-field').addEventListener('click', () => {
+    const current = getCurrentVariables();
+    const currentKeys = new Set(current.map((v) => v.key));
+    const predefined = PREDEFINED_VARIABLES.filter((p) => !currentKeys.has(p.key));
+    const choice = state.lang === 'ru'
+      ? (predefined.length ? confirm('Добавить из списка предустановленных? (Отмена — ввести своё поле)') : false)
+      : (predefined.length ? confirm('Add from predefined list? (Cancel — enter custom field)') : false);
+    if (choice && predefined.length) {
+      const labels = predefined.map((p, i) => `${i + 1}. ${state.lang === 'ru' ? p.labelRu : p.labelEn} (${p.key})`).join('\n');
+      const keyPrompt = state.lang === 'ru' ? 'Введите номер или ключ из списка:\n' + labels : 'Enter number or key from list:\n' + labels;
+      const raw = prompt(keyPrompt, predefined[0].key);
+      if (raw == null || raw === '') return;
+      const num = parseInt(raw.trim(), 10);
+      const picked = num >= 1 && num <= predefined.length ? predefined[num - 1] : predefined.find((p) => p.key === raw.trim());
+      if (picked) {
+        const chip = document.createElement('span');
+        chip.className = 'tpl-var-chip';
+        chip.setAttribute('data-key', picked.key);
+        chip.setAttribute('data-label', state.lang === 'ru' ? picked.labelRu : picked.labelEn);
+        chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:var(--bg-soft,#eee);padding:4px 8px;border-radius:6px;font-size:13px';
+        chip.innerHTML = `<span>${escapeHtml(state.lang === 'ru' ? picked.labelRu : picked.labelEn)}</span><button type="button" class="tpl-var-remove" aria-label="Удалить" style="background:none;border:none;cursor:pointer;padding:0;margin:0;color:#666;font-size:16px;line-height:1">&times;</button>`;
+        chip.querySelector('.tpl-var-remove').addEventListener('click', () => chip.remove());
+        listEl.appendChild(chip);
+      }
+    } else {
+      const keyPrompt = state.lang === 'ru' ? 'Ключ переменной (латиница, например ooo):' : 'Variable key (e.g. ooo):';
+      const key = prompt(keyPrompt, '');
+      if (key == null || key === '') return;
+      const safeKey = key.trim().replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase() || 'field';
+      const labelPrompt = state.lang === 'ru' ? 'Подпись поля (например: ООО):' : 'Field label (e.g. LLC):';
+      const label = prompt(labelPrompt, safeKey);
+      if (label == null) return;
+      const chip = document.createElement('span');
+      chip.className = 'tpl-var-chip';
+      chip.setAttribute('data-key', safeKey);
+      chip.setAttribute('data-label', (label || safeKey).trim());
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:var(--bg-soft,#eee);padding:4px 8px;border-radius:6px;font-size:13px';
+      chip.innerHTML = `<span>${escapeHtml((label || safeKey).trim())}</span><button type="button" class="tpl-var-remove" aria-label="Удалить" style="background:none;border:none;cursor:pointer;padding:0;margin:0;color:#666;font-size:16px;line-height:1">&times;</button>`;
+      chip.querySelector('.tpl-var-remove').addEventListener('click', () => chip.remove());
+      listEl.appendChild(chip);
+    }
+  });
+
   const close = () => overlay.remove();
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   box.querySelector('#tpl-cancel').addEventListener('click', close);
@@ -2536,20 +2682,8 @@ function openTemplateEditorModal(existing) {
     ta.focus();
   }
 
-  const varButtons = [
-    { key: 'fullName', label: 'ФИО' },
-    { key: 'ukName', label: 'УК' },
-    { key: 'address', label: 'Адрес' },
-    { key: 'passportSeries', label: 'Серия' },
-    { key: 'passportNumber', label: 'Номер паспорта' },
-    { key: 'passportIssued', label: 'Кем выдан' },
-    { key: 'phone', label: 'Телефон' },
-    { key: 'emailForReply', label: 'Email' },
-    { key: 'accountNumber', label: 'Лицевой счёт' },
-    { key: 'period', label: 'Период' },
-    { key: 'extraInfo', label: 'Иная информация' },
-  ];
-  const varBtnsHtml = varButtons.map((v) => `<button type="button" class="secondary-btn tpl-var-btn" data-var="{{${v.key}}}" data-target="tpl-body-ru" style="font-size:12px;padding:4px 8px">${v.label}</button>`).join('');
+  const varButtons = PREDEFINED_VARIABLES.map((v) => ({ key: v.key, label: state.lang === 'ru' ? v.labelRu : v.labelEn }));
+  const varBtnsHtml = varButtons.map((v) => `<button type="button" class="secondary-btn tpl-var-btn" data-var="{{${v.key}}}" data-target="tpl-body-ru" style="font-size:12px;padding:4px 8px">${escapeHtml(v.label)}</button>`).join('');
 
   const bodyRuWrap = box.querySelector('#tpl-body-ru')?.closest('.field');
   if (bodyRuWrap) {
@@ -2580,6 +2714,7 @@ function openTemplateEditorModal(existing) {
     const titleEn = box.querySelector('#tpl-title-en').value || '';
     const bodyRu = box.querySelector('#tpl-body-ru').value || '';
     const bodyEn = box.querySelector('#tpl-body-en').value || '';
+    const variables = getCurrentVariables();
     const payload = {
       name: box.querySelector('#tpl-name').value.trim(),
       description: box.querySelector('#tpl-desc').value.trim(),
@@ -2589,6 +2724,7 @@ function openTemplateEditorModal(existing) {
       title_en: titleEn,
       body_ru: bodyRu,
       body_en: bodyEn,
+      variables,
       content: { title: { ru: titleRu, en: titleEn }, body: { ru: bodyRu, en: bodyEn } },
     };
     if (!payload.name) {

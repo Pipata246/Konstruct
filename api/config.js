@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const { data } = await supabase
         .from('templates')
-        .select('id, name, description, title_ru, title_en, body_ru, body_en, sort_order, is_active')
+        .select('id, name, description, title_ru, title_en, body_ru, body_en, sort_order, is_active, variables')
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
@@ -26,6 +26,7 @@ module.exports = async function handler(req, res) {
         description: row.description || '',
         sort_order: row.sort_order ?? 0,
         is_active: row.is_active !== false,
+        variables: Array.isArray(row.variables) ? row.variables : (row.variables != null ? JSON.parse(JSON.stringify(row.variables)) : []),
         content: {
           title: { ru: row.title_ru || '', en: row.title_en || '' },
           body: { ru: row.body_ru || '', en: row.body_en || '' },
